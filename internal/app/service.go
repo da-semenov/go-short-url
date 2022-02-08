@@ -21,9 +21,10 @@ func (s *storageMap) encode(str string) string {
 }
 
 func (s *storageMap) GetID(url string) (string, error) {
+	const baseURL string = "http://localhost:8080/"
 	id := s.encode(url)
 	s.store[id] = url
-	return id, nil
+	return baseURL + id, nil
 }
 
 func (s *storageMap) GetURL(id string) (string, error) {
