@@ -5,29 +5,29 @@ import (
 	"errors"
 )
 
-type storageMap struct {
+type Storage struct {
 	store map[string]string
 }
 
-func NewStorage() *storageMap {
-	var s storageMap
+func NewStorage() *Storage {
+	var s Storage
 	s.store = make(map[string]string)
 	return &s
 }
 
-func (s *storageMap) encode(str string) string {
+func (s *Storage) encode(str string) string {
 	sha := base64.StdEncoding.EncodeToString([]byte(str))
 	return sha
 }
 
-func (s *storageMap) GetID(url string) (string, error) {
+func (s *Storage) GetID(url string) (string, error) {
 	const baseURL string = "http://localhost:8080/"
 	id := s.encode(url)
 	s.store[id] = url
 	return baseURL + id, nil
 }
 
-func (s *storageMap) GetURL(id string) (string, error) {
+func (s *Storage) GetURL(id string) (string, error) {
 	if val, ok := s.store[id]; ok {
 		return val, nil
 	}

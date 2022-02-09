@@ -27,11 +27,9 @@ func (z *URLHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	case http.MethodPost:
 		z.postMethodHandler(w, r)
 	default:
-		w.WriteHeader(http.StatusBadRequest)
-		_, err := w.Write([]byte("Unsupported request type"))
-		if err != nil {
-			panic("Can't write response")
-		}
+		http.Error(w, "Only GET and POST methods are allowed",
+			http.StatusMethodNotAllowed)
+		return
 	}
 }
 
@@ -42,12 +40,8 @@ func (z *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if string(b) == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		_, err = w.Write([]byte("Bad request"))
-		if err != nil {
-			panic("Can't write response")
-		}
+	if len(b) == 0 {
+		http.Error(w, "Body can't be empty", http.StatusBadRequest)
 		return
 	} else {
 		res, _ := z.service.GetID(string(b))
@@ -58,22 +52,16 @@ func (z *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (z *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
-	id := r.RequestURI[1:]
-	if id == "" {
-		w.WriteHeader(http.StatusBadRequest)
-		return
-	} else {
-		res, err := z.service.GetURL(id)
-		if err != nil {
-			w.WriteHeader(http.StatusBadRequest)
-			_, err = w.Write([]byte(err.Error()))
-			if err != nil {
-				panic("Can't write response")
-			}
-			return
-		}
-		w.Header().Set("Location", res)
-		w.WriteHeader(http.StatusTemporaryRedirect)
+	if r.URL.Path == "/" {
+		http.Error(w, "id was not provided", http.StatusBadRequest)
 		return
 	}
+	id := r.URL.Path[1:]
+	res, err := z.service.GetURL(id)
+	if err != nil {
+		http.Error(w, "URL was not found", http.StatusBadRequest)
+		return
+	}
+	w.Header().Add("Location", res)
+	w.WriteHeader(http.StatusTemporaryRedirect)
 }
