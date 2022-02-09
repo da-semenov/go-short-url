@@ -43,12 +43,12 @@ func (z *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 	if len(b) == 0 {
 		http.Error(w, "Body can't be empty", http.StatusBadRequest)
 		return
-	} else {
-		res, _ := z.service.GetID(string(b))
-		w.WriteHeader(http.StatusCreated)
-		_, err = w.Write([]byte(res))
-		return
 	}
+
+	res, _ := z.service.GetID(string(b))
+	w.Header().Set("content-type", "text/plain")
+	w.WriteHeader(http.StatusCreated)
+	w.Write([]byte(res))
 }
 
 func (z *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
