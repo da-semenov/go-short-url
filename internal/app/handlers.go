@@ -54,7 +54,7 @@ func (u *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 	res, _ := u.service.GetID(string(b))
 	w.Header().Set("content-type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte(res))
+	w.Write([]byte(res))
 }
 
 func (u *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
@@ -70,5 +70,4 @@ func (u *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Location", res)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-	return
 }
