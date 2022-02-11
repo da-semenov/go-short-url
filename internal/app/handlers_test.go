@@ -71,12 +71,7 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 			h := http.HandlerFunc(handler.Handler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			if res.StatusCode != tt.wants.responseCode {
 				t.Errorf("Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
@@ -129,12 +124,7 @@ func TestURLHandler_getMethodHandler(t *testing.T) {
 			h := http.HandlerFunc(handler.Handler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
@@ -182,12 +172,7 @@ func TestURLHandler_other(t *testing.T) {
 			h := http.HandlerFunc(handler.Handler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
