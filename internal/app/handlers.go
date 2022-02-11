@@ -2,6 +2,7 @@ package app
 
 import (
 	"io"
+	"log"
 	"net/http"
 )
 
@@ -14,18 +15,18 @@ type URLHandler struct {
 	service Service
 }
 
-func ShortURLHandler() *URLHandler {
+func EncodeURLHandler(service Service) *URLHandler {
 	var h URLHandler
-	h.service = NewStorage()
+	h.service = service
 	return &h
 }
 
-func (z *URLHandler) Handler(w http.ResponseWriter, r *http.Request) {
+func (u *URLHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	switch r.Method {
 	case http.MethodGet:
-		z.getMethodHandler(w, r)
+		u.getMethodHandler(w, r)
 	case http.MethodPost:
-		z.postMethodHandler(w, r)
+		u.postMethodHandler(w, r)
 	default:
 		http.Error(w, "Only GET and POST methods are allowed",
 			http.StatusMethodNotAllowed)
@@ -33,9 +34,14 @@ func (z *URLHandler) Handler(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-func (z *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
+func (u *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
-	defer r.Body.Close()
+	defer func() {
+		err := r.Body.Close()
+		if err != nil {
+			log.Fatal(err)
+		}
+	}()
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -45,23 +51,24 @@ func (z *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	res, _ := z.service.GetID(string(b))
+	res, _ := u.service.GetID(string(b))
 	w.Header().Set("content-type", "text/plain")
 	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(res))
+	_, err = w.Write([]byte(res))
 }
 
-func (z *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
+func (u *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
 		http.Error(w, "id was not provided", http.StatusBadRequest)
 		return
 	}
 	id := r.URL.Path[1:]
-	res, err := z.service.GetURL(id)
+	res, err := u.service.GetURL(id)
 	if err != nil {
 		http.Error(w, "URL was not found", http.StatusBadRequest)
 		return
 	}
 	w.Header().Add("Location", res)
 	w.WriteHeader(http.StatusTemporaryRedirect)
+	return
 }
