@@ -58,12 +58,12 @@ func TestURLService_GetID(t *testing.T) {
 			s.encode = mockEncode
 			res, err := s.GetID(tt.url)
 			if (err != nil) != tt.wantErr {
-				t.Errorf("URL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
 				return
 			}
 			u, err := url.Parse(res)
 			if err != nil {
-				t.Errorf("URL() error = %v, wantErr %v", err, tt.wantErr)
+				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if !tt.wantErr {
 				assert.Equal(t, tt.want.scheme, u.Scheme)

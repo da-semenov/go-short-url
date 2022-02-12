@@ -21,20 +21,15 @@ func EncodeURLHandler(service Service) *URLHandler {
 	return &h
 }
 
-func (u *URLHandler) Handler(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		u.getMethodHandler(w, r)
-	case http.MethodPost:
-		u.postMethodHandler(w, r)
-	default:
-		http.Error(w, "Only GET and POST methods are allowed",
-			http.StatusMethodNotAllowed)
-		return
+func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
+	w.WriteHeader(http.StatusMethodNotAllowed)
+	_, err := w.Write([]byte("Unsupported request type"))
+	if err != nil {
+		panic("Can't write response")
 	}
 }
 
-func (u *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
+func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
 	b, err := io.ReadAll(r.Body)
 	defer func() {
 		err := r.Body.Close()
@@ -57,7 +52,7 @@ func (u *URLHandler) postMethodHandler(w http.ResponseWriter, r *http.Request) {
 	w.Write([]byte(res))
 }
 
-func (u *URLHandler) getMethodHandler(w http.ResponseWriter, r *http.Request) {
+func (u *URLHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 	if r.URL.Path == "/" {
 		http.Error(w, "id was not provided", http.StatusBadRequest)
 		return

@@ -55,11 +55,11 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 		args  args
 		wants wants
 	}{
-		{name: "POST test #1 (Negative). Empty body",
+		{name: "POST test 1.Empty body",
 			args:  args{requestBody: ""},
 			wants: wants{responseCode: http.StatusBadRequest, resultResponse: ""},
 		},
-		{name: "POST test #2 (Positive)",
+		{name: "POST test 2.Encoded URL",
 			args:  args{requestBody: "URL"},
 			wants: wants{responseCode: http.StatusCreated, resultResponse: "encode_URL"},
 		},
@@ -68,14 +68,13 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest("POST", "/", strings.NewReader(tt.args.requestBody))
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handler.Handler)
+			h := http.HandlerFunc(handler.PostMethodHandler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer res.Body.Close()
+			fmt.Println(res)
 
-			if res.StatusCode != tt.wants.responseCode {
-				t.Errorf("Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
-			}
+			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
+
 			if res.StatusCode == http.StatusCreated {
 				responseBody, err := io.ReadAll(res.Body)
 				defer func() {
@@ -87,9 +86,8 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 				if err != nil {
 					t.Errorf("Can't read response body, %e", err)
 				}
-				if string(responseBody) != tt.wants.resultResponse {
-					t.Errorf("Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
-				}
+
+				assert.Equal(t, tt.wants.resultResponse, string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
 			}
 		})
 	}
@@ -97,7 +95,7 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 
 func TestURLHandler_getMethodHandler(t *testing.T) {
 	type args struct {
-		encodeURLKey string
+		encodeURLid string
 	}
 	type wants struct {
 		responseCode   int
@@ -108,23 +106,28 @@ func TestURLHandler_getMethodHandler(t *testing.T) {
 		args  args
 		wants wants
 	}{
-		{name: "GET test #1 (Positive).",
-			args:  args{encodeURLKey: "encode_URL"},
+		{name: "GET test 1.Get URL.",
+			args:  args{encodeURLid: "encode_URL"},
 			wants: wants{responseCode: http.StatusTemporaryRedirect, resultResponse: "URL"},
 		},
-		{name: "GET test #2 (Negative).",
-			args:  args{encodeURLKey: ""},
+		{name: "GET test 2.Empty id.",
+			args:  args{encodeURLid: ""},
 			wants: wants{responseCode: http.StatusBadRequest, resultResponse: ""},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			request := httptest.NewRequest("GET", fmt.Sprintf("/%s", tt.args.encodeURLKey), nil)
+			request := httptest.NewRequest("GET", fmt.Sprintf("/%s", tt.args.encodeURLid), nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handler.Handler)
+			h := http.HandlerFunc(handler.GetMethodHandler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() {
+				err := res.Body.Close()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
@@ -135,7 +138,7 @@ func TestURLHandler_getMethodHandler(t *testing.T) {
 	}
 }
 
-func TestURLHandler_other(t *testing.T) {
+func TestURLHandler_defaultHandler(t *testing.T) {
 	type args struct {
 		method string
 	}
@@ -148,31 +151,36 @@ func TestURLHandler_other(t *testing.T) {
 		args  args
 		wants wants
 	}{
-		{name: "Other http method test #1 (Positive).",
+		{name: "test 1.PUT method.",
 			args:  args{method: "PUT"},
-			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Only GET and POST methods are allowed"},
+			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Unsupported request type"},
 		},
-		{name: "Other http method test #1 (Positive).",
+		{name: "test 2.PATCH method.",
 			args:  args{method: "PATCH"},
-			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Only GET and POST methods are allowed"},
+			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Unsupported request type"},
 		},
-		{name: "Other http method test #1 (Positive).",
+		{name: "test 3.DELETE method.",
 			args:  args{method: "DELETE"},
-			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Only GET and POST methods are allowed"},
+			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Unsupported request type"},
 		},
-		{name: "Other http method test #1 (Positive).",
+		{name: "test 4.HEAD method.",
 			args:  args{method: "HEAD"},
-			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Only GET and POST methods are allowed"},
+			wants: wants{responseCode: http.StatusMethodNotAllowed, resultResponse: "Unsupported request type"},
 		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			request := httptest.NewRequest(tt.args.method, "/", nil)
 			w := httptest.NewRecorder()
-			h := http.HandlerFunc(handler.Handler)
+			h := http.HandlerFunc(handler.DefaultHandler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer res.Body.Close()
+			defer func() {
+				err := res.Body.Close()
+				if err != nil {
+					log.Fatal(err)
+				}
+			}()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
@@ -186,7 +194,7 @@ func TestURLHandler_other(t *testing.T) {
 			if err != nil {
 				t.Errorf("Can't read response body, %e", err)
 			}
-			assert.Equal(t, "Only GET and POST methods are allowed\n", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
+			assert.Equal(t, "Unsupported request type", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
 		})
 	}
 }
