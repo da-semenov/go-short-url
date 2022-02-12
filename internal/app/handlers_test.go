@@ -6,7 +6,6 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
-	"log"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -77,12 +76,7 @@ func TestURLHandler_postMethodHandler(t *testing.T) {
 
 			if res.StatusCode == http.StatusCreated {
 				responseBody, err := io.ReadAll(res.Body)
-				defer func() {
-					err := res.Body.Close()
-					if err != nil {
-						log.Fatal(err)
-					}
-				}()
+				defer res.Body.Close()
 				if err != nil {
 					t.Errorf("Can't read response body, %e", err)
 				}
@@ -122,12 +116,7 @@ func TestURLHandler_getMethodHandler(t *testing.T) {
 			h := http.HandlerFunc(handler.GetMethodHandler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
@@ -175,22 +164,11 @@ func TestURLHandler_defaultHandler(t *testing.T) {
 			h := http.HandlerFunc(handler.DefaultHandler)
 			h.ServeHTTP(w, request)
 			res := w.Result()
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
+			defer res.Body.Close()
 
 			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
 
 			responseBody, err := io.ReadAll(res.Body)
-			defer func() {
-				err := res.Body.Close()
-				if err != nil {
-					log.Fatal(err)
-				}
-			}()
 			if err != nil {
 				t.Errorf("Can't read response body, %e", err)
 			}
