@@ -22,11 +22,9 @@ func EncodeURLHandler(service Service) *URLHandler {
 }
 
 func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
-	w.WriteHeader(http.StatusMethodNotAllowed)
-	_, err := w.Write([]byte("Unsupported request type"))
-	if err != nil {
-		panic("Can't write response")
-	}
+	http.Error(w, "Unsupported request type",
+		http.StatusMethodNotAllowed)
+	return
 }
 
 func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {

@@ -172,7 +172,7 @@ func TestURLHandler_defaultHandler(t *testing.T) {
 			if err != nil {
 				t.Errorf("Can't read response body, %e", err)
 			}
-			assert.Equal(t, "Unsupported request type", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
+			assert.Equal(t, "Unsupported request type\n", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
 		})
 	}
 }
