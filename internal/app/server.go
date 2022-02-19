@@ -36,3 +36,13 @@ func (s *URLService) GetURL(id string) (string, error) {
 	res, err := s.repository.Find(id)
 	return res, err
 }
+
+func (s *URLService) GetShorten(url string) (*ShortenResponse, error) {
+	var res ShortenResponse
+	resStr, err := s.GetID(url)
+	if err != nil {
+		return nil, err
+	}
+	res.Result = resStr
+	return &res, nil
+}
