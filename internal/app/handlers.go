@@ -34,7 +34,6 @@ type ShortenResponse struct {
 func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unsupported request type",
 		http.StatusMethodNotAllowed)
-	return
 }
 
 func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
