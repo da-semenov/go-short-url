@@ -18,6 +18,12 @@ func RunApp() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
+	if cfg.ServerAddress == "" {
+		cfg.ServerAddress = "localhost:8080"
+	}
+	if cfg.BaseURL == "" {
+		cfg.BaseURL = "http://localhost:8080"
+	}
 
 	repo := NewStorage()
 	service := NewService(repo)
