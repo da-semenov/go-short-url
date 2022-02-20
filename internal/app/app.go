@@ -9,20 +9,14 @@ import (
 )
 
 type config struct {
-	ServerAddress string `env:"SERVER_ADDRESS"`
-	BaseURL       string `env:"BASE_URL"`
+	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
+	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 }
 
 func RunApp() {
 	cfg := config{}
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
-	}
-	if cfg.ServerAddress == "" {
-		cfg.ServerAddress = "localhost:8080"
-	}
-	if cfg.BaseURL == "" {
-		cfg.BaseURL = "http://localhost:8080"
 	}
 
 	repo := NewStorage()
