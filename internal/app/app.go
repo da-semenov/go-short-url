@@ -1,13 +1,30 @@
 package app
 
 import (
+	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 )
 
+type config struct {
+	ServerAddress string `env:"SERVER_ADDRESS"`
+	BaseURL       string `env:"BASE_URL"`
+}
+
 func RunApp() {
+	cfg := config{}
+	if err := env.Parse(&cfg); err != nil {
+		log.Fatal(err)
+	}
+	if cfg.ServerAddress == "" {
+		cfg.ServerAddress = "localhost:8080"
+	}
+	if cfg.BaseURL == "" {
+		cfg.BaseURL = "http://localhost:8080"
+	}
+
 	repo := NewStorage()
 	service := NewService(repo)
 	h := EncodeURLHandler(service)
@@ -25,5 +42,5 @@ func RunApp() {
 	})
 
 	log.Println("starting server on 8080...")
-	log.Fatal(http.ListenAndServe(":8080", router))
+	log.Fatal(http.ListenAndServe(cfg.ServerAddress, router))
 }
