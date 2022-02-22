@@ -54,7 +54,7 @@ func TestURLService_GetID(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewService(repo)
+			s := NewService(repo, "http://localhost:8080/")
 			s.encode = mockEncode
 			res, err := s.GetID(tt.url)
 			if (err != nil) != tt.wantErr {
@@ -94,7 +94,7 @@ func TestURLService_GetURL(t *testing.T) {
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewService(repo)
+			s := NewService(repo, "http://localhost:8080/")
 
 			got, err := s.GetURL(tt.key)
 			if (err != nil) != tt.wantErr {

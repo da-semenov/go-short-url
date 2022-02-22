@@ -1,26 +1,27 @@
 package app
 
 import (
-	"github.com/caarlos0/env/v6"
+	"fmt"
+	conf "github.com/da-semenov/go-short-url/internal/app/config"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
 	"net/http"
 )
 
-type config struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
-}
-
 func RunApp() {
-	cfg := config{}
-	if err := env.Parse(&cfg); err != nil {
+	config := conf.NewConfig()
+	err := config.Init()
+	if err != nil {
 		log.Fatal(err)
 	}
 
-	repo := NewStorage()
-	service := NewService(repo)
+	repo, err := NewStorage(config.FileStorage)
+	if err != nil {
+		fmt.Println("can't init repository", err)
+		return
+	}
+	service := NewService(repo, config.BaseURL)
 	h := EncodeURLHandler(service)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)
@@ -36,5 +37,5 @@ func RunApp() {
 	})
 
 	log.Println("starting server on 8080...")
-	log.Fatal(http.ListenAndServe(cfg.ServerAddress, router))
+	log.Fatal(http.ListenAndServe(config.ServerAddress, router))
 }
