@@ -1,7 +1,6 @@
 package app
 
 import (
-	"fmt"
 	"github.com/caarlos0/env/v6"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -19,7 +18,6 @@ func RunApp() {
 	if err := env.Parse(&cfg); err != nil {
 		log.Fatal(err)
 	}
-	fmt.Printf("ServerAddress %s\nBaseURL %s\n", cfg.ServerAddress, cfg.BaseURL)
 
 	repo := NewStorage()
 	service := NewService(repo)
