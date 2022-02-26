@@ -3,6 +3,7 @@ package config
 import (
 	"fmt"
 	"github.com/caarlos0/env/v6"
+	"github.com/spf13/pflag"
 	"os"
 )
 
@@ -18,6 +19,11 @@ func (config *AppConfig) Init() error {
 		fmt.Println("unable to load server settings", err)
 		return err
 	}
+
+	pflag.StringVarP(&config.ServerAddress, "a", "a", config.ServerAddress, "Http-server address")
+	pflag.StringVarP(&config.BaseURL, "b", "b", config.BaseURL, "Base URL")
+	pflag.StringVarP(&config.FileStorage, "f", "f", config.FileStorage, "File storage path")
+	pflag.Parse()
 
 	if config.BaseURL == "" || config.FileStorage == "" || config.ServerAddress == "" {
 		if err := env.Parse(&config); err != nil {
