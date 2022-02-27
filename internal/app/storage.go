@@ -20,6 +20,14 @@ type StoreRecord struct {
 	Value string
 }
 
+type ShortenRequest struct {
+	URL string `json:"url"`
+}
+
+type ShortenResponse struct {
+	Result string `json:"result"`
+}
+
 func NewStorage(fileStorage string) (*Storage, error) {
 	var s Storage
 	var tmpPath string

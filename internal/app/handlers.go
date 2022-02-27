@@ -23,14 +23,6 @@ func EncodeURLHandler(service Service) *URLHandler {
 	return &h
 }
 
-type ShortenRequest struct {
-	URL string `json:"url"`
-}
-
-type ShortenResponse struct {
-	Result string `json:"result"`
-}
-
 func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unsupported request type",
 		http.StatusMethodNotAllowed)
