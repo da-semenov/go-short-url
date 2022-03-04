@@ -1,10 +1,13 @@
 package app
 
 import (
+	"bytes"
+	"compress/gzip"
 	"encoding/json"
+	"fmt"
 	"io"
-	"log"
 	"net/http"
+	"strings"
 )
 
 type Service interface {
@@ -23,19 +26,44 @@ func EncodeURLHandler(service Service) *URLHandler {
 	return &h
 }
 
+func decompress(data []byte) ([]byte, error) {
+	r, err := gzip.NewReader(bytes.NewReader(data))
+	if err != nil {
+		return nil, err
+	}
+	defer r.Close()
+
+	var res bytes.Buffer
+	_, err = res.ReadFrom(r)
+	if err != nil {
+		return nil, fmt.Errorf("failed decompress data: %v", err)
+	}
+	return res.Bytes(), nil
+}
+
+func getRequestBody(r *http.Request) ([]byte, error) {
+	b, err := io.ReadAll(r.Body)
+	defer r.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
+		unzipBody, err := decompress(b)
+		if err != nil {
+			panic(err)
+		}
+		return unzipBody, nil
+	}
+	return b, nil
+}
+
 func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
 	http.Error(w, "Unsupported request type",
 		http.StatusMethodNotAllowed)
 }
 
 func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
-	defer func() {
-		err := r.Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	b, err := getRequestBody(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -52,13 +80,7 @@ func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) {
-	b, err := io.ReadAll(r.Body)
-	defer func() {
-		err := r.Body.Close()
-		if err != nil {
-			log.Fatal(err)
-		}
-	}()
+	b, err := getRequestBody(r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return

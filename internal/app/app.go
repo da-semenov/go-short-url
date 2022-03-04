@@ -3,6 +3,7 @@ package app
 import (
 	"fmt"
 	conf "github.com/da-semenov/go-short-url/internal/app/config"
+	midlwr "github.com/da-semenov/go-short-url/internal/app/custommiddleware"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -27,6 +28,7 @@ func RunApp() {
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
+	router.Use(midlwr.GzipHandle)
 	router.Route("/", func(r chi.Router) {
 		r.Get("/{id}", h.GetMethodHandler)
 		r.Post("/api/shorten", h.PostShortenHandler)
