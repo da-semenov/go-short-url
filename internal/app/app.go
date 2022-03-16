@@ -28,9 +28,10 @@ func RunApp() {
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
-	router.Use(midlwr.GzipHandle)
+	router.Use(midlwr.Compress)
 	router.Route("/", func(r chi.Router) {
 		r.Get("/{id}", h.GetMethodHandler)
+		r.Get("/ping", h.PingHandler)
 		r.Post("/api/shorten", h.PostShortenHandler)
 		r.Post("/", h.PostMethodHandler)
 		r.Put("/", h.DefaultHandler)

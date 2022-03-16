@@ -3,6 +3,7 @@ package custommiddleware
 import (
 	"compress/gzip"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -16,7 +17,7 @@ func (w gzipWriter) Write(b []byte) (int, error) {
 	return w.Writer.Write(b)
 }
 
-func GzipHandle(next http.Handler) http.Handler {
+func Compress(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if !strings.Contains(r.Header.Get("Accept-Encoding"), "gzip") {
 			next.ServeHTTP(w, r)
@@ -27,7 +28,7 @@ func GzipHandle(next http.Handler) http.Handler {
 		if err != nil {
 			_, err = io.WriteString(w, err.Error())
 			if err != nil {
-				panic(err)
+				log.Fatal(err)
 			}
 			w.WriteHeader(http.StatusInternalServerError)
 			return

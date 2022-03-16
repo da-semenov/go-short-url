@@ -50,3 +50,7 @@ func (s *URLService) GetShorten(url string) (*ShortenResponse, error) {
 	res.Result = resStr
 	return &res, nil
 }
+
+func (s *URLService) Ping() bool {
+	return false
+}
