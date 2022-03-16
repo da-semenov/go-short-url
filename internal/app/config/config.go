@@ -20,7 +20,7 @@ func (config *AppConfig) Init() error {
 	pflag.StringVarP(&config.ServerAddress, "a", "a", config.ServerAddress, "Http-server address")
 	pflag.StringVarP(&config.BaseURL, "b", "b", config.BaseURL, "Base URL")
 	pflag.StringVarP(&config.FileStorage, "f", "f", config.FileStorage, "File storage path")
-	pflag.StringVarP(&config.FileStorage, "d", "d", config.DatabaseDSN, "Database connection string")
+	pflag.StringVarP(&config.DatabaseDSN, "d", "d", config.DatabaseDSN, "Database connection string")
 	pflag.Parse()
 
 	if config.BaseURL == "" || config.FileStorage == "" || config.ServerAddress == "" || config.DatabaseDSN == "" {
