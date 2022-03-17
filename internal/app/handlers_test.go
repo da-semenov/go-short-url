@@ -34,11 +34,6 @@ func (s *ServiceMock) GetShorten(url string) (*ShortenResponse, error) {
 	return &ShortenResponse{Result: args.String(0)}, args.Error(1)
 }
 
-func (s *ServiceMock) Ping() bool {
-	args := s.Called()
-	return args.Bool(0)
-}
-
 var service *ServiceMock
 var handler *URLHandler
 

@@ -14,7 +14,6 @@ type Service interface {
 	GetID(url string) (string, error)
 	GetURL(id string) (string, error)
 	GetShorten(url string) (*ShortenResponse, error)
-	Ping() bool
 }
 
 type URLHandler struct {
@@ -129,13 +128,4 @@ func (u *URLHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	w.Header().Add("Location", res)
 	w.WriteHeader(http.StatusTemporaryRedirect)
-}
-
-func (u *URLHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	if !u.service.Ping() {
-		w.WriteHeader(http.StatusInternalServerError)
-		return
-	}
-	w.WriteHeader(http.StatusOK)
-	return
 }
