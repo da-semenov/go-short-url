@@ -1,10 +1,11 @@
-package app
+package handlers
 
 import (
 	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/da-semenov/go-short-url/internal/app/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"io"
@@ -29,9 +30,9 @@ func (s *ServiceMock) GetURL(id string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (s *ServiceMock) GetShorten(url string) (*ShortenResponse, error) {
+func (s *ServiceMock) GetShorten(url string) (*storage.ShortenResponse, error) {
 	args := s.Called(url)
-	return &ShortenResponse{Result: args.String(0)}, args.Error(1)
+	return &storage.ShortenResponse{Result: args.String(0)}, args.Error(1)
 }
 
 var service *ServiceMock
@@ -191,7 +192,7 @@ func TestURLHandler_defaultHandler(t *testing.T) {
 
 func TestURLHandler_postMethodShortenHandler(t *testing.T) {
 	type args struct {
-		request *ShortenRequest
+		request *storage.ShortenRequest
 	}
 	type wants struct {
 		responseCode int
@@ -203,7 +204,7 @@ func TestURLHandler_postMethodShortenHandler(t *testing.T) {
 		wants wants
 	}{
 		{name: "test 1.Positive.",
-			args: args{request: &ShortenRequest{"URL"}},
+			args: args{request: &storage.ShortenRequest{"URL"}},
 			wants: wants{responseCode: http.StatusCreated,
 				response: "encode_URL"},
 		},
@@ -213,7 +214,7 @@ func TestURLHandler_postMethodShortenHandler(t *testing.T) {
 				response: ""},
 		},
 		{name: "test 3.Empty URL.",
-			args: args{request: &ShortenRequest{""}},
+			args: args{request: &storage.ShortenRequest{""}},
 			wants: wants{responseCode: http.StatusBadRequest,
 				response: ""},
 		},
@@ -240,7 +241,7 @@ func TestURLHandler_postMethodShortenHandler(t *testing.T) {
 				if err != nil {
 					t.Errorf("Can't read response body, %e", err)
 				}
-				var result ShortenResponse
+				var result storage.ShortenResponse
 				if err := json.Unmarshal(responseBody, &result); err != nil {
 					t.Error("Can't unmarshal", err)
 				}

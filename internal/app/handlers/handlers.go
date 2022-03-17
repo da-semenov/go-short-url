@@ -1,10 +1,11 @@
-package app
+package handlers
 
 import (
 	"bytes"
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
+	"github.com/da-semenov/go-short-url/internal/app/storage"
 	"io"
 	"net/http"
 	"strings"
@@ -13,11 +14,12 @@ import (
 type Service interface {
 	GetID(url string) (string, error)
 	GetURL(id string) (string, error)
-	GetShorten(url string) (*ShortenResponse, error)
+	GetShorten(url string) (*storage.ShortenResponse, error)
 }
 
 type URLHandler struct {
-	service Service
+	service       Service
+	cryptoService CryptoService
 }
 
 func EncodeURLHandler(service Service) *URLHandler {
@@ -89,7 +91,7 @@ func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Body can't be empty", http.StatusBadRequest)
 		return
 	} else {
-		var req ShortenRequest
+		var req storage.ShortenRequest
 		if err := json.Unmarshal(b, &req); err != nil {
 			http.Error(w, "json error", http.StatusBadRequest)
 			return

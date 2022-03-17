@@ -1,7 +1,8 @@
-package app
+package server
 
 import (
 	"encoding/base64"
+	"github.com/da-semenov/go-short-url/internal/app/storage"
 )
 
 type EncodeFunc func(str string) string
@@ -15,6 +16,7 @@ type URLService struct {
 type Repository interface {
 	Find(id string) (string, error)
 	Save(id string, value string) error
+	FindByUser(key string) ([]string, error)
 }
 
 func NewService(repo Repository, baseURL string) *URLService {
@@ -41,8 +43,8 @@ func (s *URLService) GetURL(id string) (string, error) {
 	return res, err
 }
 
-func (s *URLService) GetShorten(url string) (*ShortenResponse, error) {
-	var res ShortenResponse
+func (s *URLService) GetShorten(url string) (*storage.ShortenResponse, error) {
+	var res storage.ShortenResponse
 	resStr, err := s.GetID(url)
 	if err != nil {
 		return nil, err

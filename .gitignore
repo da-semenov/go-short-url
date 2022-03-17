@@ -24,4 +24,5 @@ vendor/
 
 # data files
 data/storage.txt
-
+internal/app/data
+*.dat

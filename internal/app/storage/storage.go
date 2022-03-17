@@ -1,4 +1,4 @@
-package app
+package storage
 
 import (
 	"encoding/gob"
@@ -13,19 +13,6 @@ type Storage struct {
 	cfgFileStorage string
 	f              *os.File
 	encoder        *gob.Encoder
-}
-
-type StoreRecord struct {
-	Key   string
-	Value string
-}
-
-type ShortenRequest struct {
-	URL string `json:"url"`
-}
-
-type ShortenResponse struct {
-	Result string `json:"result"`
 }
 
 func NewStorage(fileStorage string) (*Storage, error) {
@@ -139,4 +126,9 @@ func (s *Storage) Save(id string, value string) error {
 		err = s.encoder.Encode(&rec)
 	}
 	return err
+}
+
+func (s *Storage) FindByUser(id string) ([]string, error) {
+	// TODO
+	return nil, nil
 }

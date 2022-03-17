@@ -3,7 +3,10 @@ package app
 import (
 	"fmt"
 	conf "github.com/da-semenov/go-short-url/internal/app/config"
-	midlwr "github.com/da-semenov/go-short-url/internal/app/custommiddleware"
+	"github.com/da-semenov/go-short-url/internal/app/handlers"
+	midlwr "github.com/da-semenov/go-short-url/internal/app/middleware"
+	"github.com/da-semenov/go-short-url/internal/app/server"
+	"github.com/da-semenov/go-short-url/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"log"
@@ -17,13 +20,16 @@ func RunApp() {
 		log.Fatal(err)
 	}
 
-	repo, err := NewStorage(config.FileStorage)
+	repo, err := storage.NewStorage(config.FileStorage)
 	if err != nil {
 		fmt.Println("can't init repository", err)
 		return
 	}
-	service := NewService(repo, config.BaseURL)
-	h := EncodeURLHandler(service)
+	service := server.NewService(repo, config.BaseURL)
+	cs, _ := server.NewCryptoService()
+	userService := server.NewUserService(repo)
+	h := handlers.EncodeURLHandler(service)
+	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.Logger)
@@ -31,6 +37,7 @@ func RunApp() {
 	router.Use(midlwr.GzipHandle)
 	router.Route("/", func(r chi.Router) {
 		r.Get("/{id}", h.GetMethodHandler)
+		r.Get("/api/user/urls", uh.GetUserURLsHandler)
 		r.Post("/api/shorten", h.PostShortenHandler)
 		r.Post("/", h.PostMethodHandler)
 		r.Put("/", h.DefaultHandler)
