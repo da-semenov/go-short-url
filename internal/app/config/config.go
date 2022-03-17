@@ -14,20 +14,21 @@ type AppConfig struct {
 }
 
 func (config *AppConfig) Init() error {
-	fmt.Println(os.Args)
-	if err := env.Parse(config); err != nil {
-		fmt.Println("unable to load server settings", err)
-		return err
-	}
 
 	pflag.StringVarP(&config.ServerAddress, "a", "a", config.ServerAddress, "Http-server address")
 	pflag.StringVarP(&config.BaseURL, "b", "b", config.BaseURL, "Base URL")
 	pflag.StringVarP(&config.FileStorage, "f", "f", config.FileStorage, "File storage path")
 	pflag.Parse()
 
+	if err := env.Parse(config); err != nil {
+		fmt.Println("unable to load server settings", err)
+		return err
+	}
+
 	if config.BaseURL[len(config.BaseURL)-1:] != "/" {
 		config.BaseURL += "/"
 	}
+	fmt.Println(os.Args)
 	return nil
 }
 
