@@ -38,6 +38,7 @@ func RunApp() {
 	router.Route("/", func(r chi.Router) {
 		r.Get("/{id}", h.GetMethodHandler)
 		r.Get("/api/user/urls", uh.GetUserURLsHandler)
+		r.Get("/ping", uh.PingHandler)
 		r.Post("/api/shorten", h.PostShortenHandler)
 		r.Post("/", h.PostMethodHandler)
 		r.Put("/", h.DefaultHandler)

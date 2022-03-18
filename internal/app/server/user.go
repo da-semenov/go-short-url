@@ -17,3 +17,8 @@ func (s *UserService) GetURLsByUser(userID string) ([]string, error) {
 	}
 	return []string{}, nil
 }
+
+func (s *UserService) Ping() bool {
+	// TODO
+	return false
+}

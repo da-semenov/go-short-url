@@ -13,6 +13,7 @@ type CryptoService interface {
 
 type UserService interface {
 	GetURLsByUser(userID string) ([]string, error)
+	Ping() bool
 }
 
 type UserHandler struct {
@@ -92,5 +93,14 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+	return
+}
+
+func (z *UserHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
+	if !z.service.Ping() {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusOK)
 	return
 }
