@@ -11,7 +11,7 @@ type AppConfig struct {
 	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
 	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FileStorage   string `env:"FILE_STORAGE_PATH" envDefault:"./data/storage.csv"`
-	DatabaseDSN   string `env:"DATABASE_DSN" envDefault:"127.0.0.1:5432"`
+	DatabaseDSN   string `env:"DATABASE_DSN" envDefault:"postgresql://practicum:practicum@127.0.0.1:5432/postgres"`
 }
 
 func (config *AppConfig) Init() error {

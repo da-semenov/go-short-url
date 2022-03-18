@@ -1,21 +1,20 @@
 package storage
 
-type StoreRecord struct {
-	Key   string
-	Value string
+type Repository interface {
+	Find(key string) (string, error)
+	Save(key string, value string) error
+	FindByUser(key string) ([]UserURLs, error)
+	Ping() (bool, error)
 }
 
-type ShortenRequest struct {
-	URL string `json:"url"`
-}
-
-type ShortenResponse struct {
-	Result string `json:"result"`
+type Repository2 interface {
+	FindByUser(key string) ([]UserURLs, error)
+	Ping() (bool, error)
 }
 
 type UserURLs struct {
-	id          int
-	userID      string
-	shortURL    string
-	originalURL string
+	ID          int
+	UserID      string
+	ShortURL    string
+	OriginalURL string
 }

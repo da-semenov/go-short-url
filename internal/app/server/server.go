@@ -8,18 +8,12 @@ import (
 type EncodeFunc func(str string) string
 
 type URLService struct {
-	repository Repository
+	repository storage.Repository
 	encode     EncodeFunc
 	baseURL    string
 }
 
-type Repository interface {
-	Find(id string) (string, error)
-	Save(id string, value string) error
-	FindByUser(key string) ([]string, error)
-}
-
-func NewService(repo Repository, baseURL string) *URLService {
+func NewService(repo storage.Repository, baseURL string) *URLService {
 	var s URLService
 	s.repository = repo
 	s.encode = func(str string) string {
@@ -41,14 +35,4 @@ func (s *URLService) GetID(url string) (string, error) {
 func (s *URLService) GetURL(id string) (string, error) {
 	res, err := s.repository.Find(id)
 	return res, err
-}
-
-func (s *URLService) GetShorten(url string) (*storage.ShortenResponse, error) {
-	var res storage.ShortenResponse
-	resStr, err := s.GetID(url)
-	if err != nil {
-		return nil, err
-	}
-	res.Result = resStr
-	return &res, nil
 }

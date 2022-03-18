@@ -1,24 +1,29 @@
 package server
 
+import (
+	"github.com/da-semenov/go-short-url/internal/app/storage"
+	"github.com/da-semenov/go-short-url/internal/app/urls"
+)
+
 type UserService struct {
-	repository Repository
+	repository storage.Repository2
 }
 
-func NewUserService(repo Repository) *UserService {
+func NewUserService(repo storage.Repository2) *UserService {
 	var s UserService
 	s.repository = repo
 	return &s
 }
 
-func (s *UserService) GetURLsByUser(userID string) ([]string, error) {
+func (s *UserService) GetURLsByUser(userID string) ([]urls.UserURLs, error) {
 	_, err := s.repository.FindByUser(userID)
 	if err != nil {
 		return nil, err
 	}
-	return []string{}, nil
+	return []urls.UserURLs{}, nil
 }
 
 func (s *UserService) Ping() bool {
-	// TODO
-	return false
+	res, _ := s.repository.Ping()
+	return res
 }

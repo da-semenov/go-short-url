@@ -30,11 +30,6 @@ func (s *ServiceMock) GetURL(id string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
-func (s *ServiceMock) GetShorten(url string) (*storage.ShortenResponse, error) {
-	args := s.Called(url)
-	return &storage.ShortenResponse{Result: args.String(0)}, args.Error(1)
-}
-
 var service *ServiceMock
 var handler *URLHandler
 

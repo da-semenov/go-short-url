@@ -3,6 +3,7 @@ package handlers
 import (
 	"encoding/json"
 	"errors"
+	"github.com/da-semenov/go-short-url/internal/app/urls"
 	"net/http"
 )
 
@@ -12,7 +13,7 @@ type CryptoService interface {
 }
 
 type UserService interface {
-	GetURLsByUser(userID string) ([]string, error)
+	GetURLsByUser(userID string) ([]urls.UserURLs, error)
 	Ping() bool
 }
 
@@ -73,12 +74,7 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 			w.WriteHeader(http.StatusNoContent)
 			return
 		} else {
-			result := make([]string, len(res))
-			for i := range res {
-				// TODO:
-				result[i] = res[i]
-			}
-			responseBody, err := json.Marshal(result)
+			responseBody, err := json.Marshal(res)
 			if err != nil {
 				panic("Can't serialize response")
 			}
@@ -93,7 +89,6 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	return
 }
 
 func (z *UserHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
@@ -102,5 +97,4 @@ func (z *UserHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	w.WriteHeader(http.StatusOK)
-	return
 }

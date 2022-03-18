@@ -5,7 +5,7 @@ import (
 	"compress/gzip"
 	"encoding/json"
 	"fmt"
-	"github.com/da-semenov/go-short-url/internal/app/storage"
+	"github.com/da-semenov/go-short-url/internal/app/urls"
 	"io"
 	"net/http"
 	"strings"
@@ -14,7 +14,6 @@ import (
 type Service interface {
 	GetID(url string) (string, error)
 	GetURL(id string) (string, error)
-	GetShorten(url string) (*storage.ShortenResponse, error)
 }
 
 type URLHandler struct {
@@ -91,16 +90,17 @@ func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) 
 		http.Error(w, "Body can't be empty", http.StatusBadRequest)
 		return
 	} else {
-		var req storage.ShortenRequest
+		var req urls.ShortenRequest
 		if err := json.Unmarshal(b, &req); err != nil {
 			http.Error(w, "json error", http.StatusBadRequest)
 			return
 		}
-		result, err := u.service.GetShorten(req.URL)
+		res, err := u.service.GetID(req.URL)
 		if err != nil {
 			http.Error(w, "Bad request", http.StatusBadRequest)
 			return
 		}
+		result := urls.ShortenResponse{Result: res}
 		responseBody, err := json.Marshal(result)
 		if err != nil {
 			http.Error(w, "Can't serialize response", http.StatusBadRequest)

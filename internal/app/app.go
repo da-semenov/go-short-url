@@ -1,6 +1,7 @@
 package app
 
 import (
+	"context"
 	"fmt"
 	conf "github.com/da-semenov/go-short-url/internal/app/config"
 	"github.com/da-semenov/go-short-url/internal/app/handlers"
@@ -19,15 +20,25 @@ func RunApp() {
 	if err != nil {
 		log.Fatal(err)
 	}
+	fileRepository, err := storage.NewFileStorage(config.FileStorage)
 
-	repo, err := storage.NewStorage(config.FileStorage)
 	if err != nil {
-		fmt.Println("can't init repository", err)
+		fmt.Println("can't init file repository", err)
 		return
 	}
-	service := server.NewService(repo, config.BaseURL)
+	postgresHandler, err := storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
+	if err != nil {
+		fmt.Println("can't init postgres handler", err)
+		return
+	}
+	postgresRepository, err := storage.NewPostgresRepository(postgresHandler)
+	if err != nil {
+		fmt.Println("can't init postgres repo", err)
+		return
+	}
+	service := server.NewService(fileRepository, config.BaseURL)
 	cs, _ := server.NewCryptoService()
-	userService := server.NewUserService(repo)
+	userService := server.NewUserService(postgresRepository)
 	h := handlers.EncodeURLHandler(service)
 	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
