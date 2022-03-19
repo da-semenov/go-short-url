@@ -14,6 +14,7 @@ type CryptoService interface {
 
 type UserService interface {
 	GetURLsByUser(userID string) ([]urls.UserURLs, error)
+	Save(userID string, originalURL string, shortURL string) error
 	Ping() bool
 }
 
@@ -29,65 +30,60 @@ func NewUserHandler(service UserService, cs CryptoService) *UserHandler {
 	return &h
 }
 
-func (z *UserHandler) bakeCookie() (*http.Cookie, error) {
+func (z *UserHandler) bakeCookie() (*http.Cookie, string, error) {
 	var c http.Cookie
-	_, token, err := z.cryptoService.GetNewUserToken()
+	userID, token, err := z.cryptoService.GetNewUserToken()
 	if err != nil {
-		return nil, err
+		return nil, "", err
 	}
 	c.Name = "token"
 	c.Value = token
-	return &c, nil
+	return &c, userID, nil
 }
 
-func (z *UserHandler) getTokenCookie(w http.ResponseWriter, r *http.Request) (*http.Cookie, error) {
+func (z *UserHandler) getTokenCookie(w http.ResponseWriter, r *http.Request) (string, error) {
 	token, err := r.Cookie("token")
-	ok, _ := z.cryptoService.Validate(token.Value)
+	ok, userID := z.cryptoService.Validate(token.Value)
 	if errors.Is(err, http.ErrNoCookie) || !ok {
-		newToken, err := z.bakeCookie()
+		var newToken *http.Cookie
+		newToken, userID, err = z.bakeCookie()
 		if err != nil {
-			return nil, err
+			return "", err
 		}
 		http.SetCookie(w, newToken)
 		token = newToken
 	} else if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
-		return nil, err
+		return "", err
 	}
-	return token, nil
+	return userID, nil
 }
 
 func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request) {
-	token, err := z.getTokenCookie(w, r)
+	userID, err := z.getTokenCookie(w, r)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
-	if ok, userID := z.cryptoService.Validate(token.Value); ok {
-		res, err := z.service.GetURLsByUser(userID)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		if len(res) == 0 {
-			w.WriteHeader(http.StatusNoContent)
-			return
-		} else {
-			responseBody, err := json.Marshal(res)
-			if err != nil {
-				panic("Can't serialize response")
-			}
-			w.Header().Set("Content-Type", "application/json")
-			w.WriteHeader(http.StatusCreated)
-			_, err = w.Write(responseBody)
-			if err != nil {
-				panic("Can't write response")
-			}
-		}
-	} else {
+	res, err := z.service.GetURLsByUser(userID)
+	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
+	}
+	if len(res) == 0 {
+		w.WriteHeader(http.StatusNoContent)
+		return
+	} else {
+		responseBody, err := json.Marshal(res)
+		if err != nil {
+			panic("can't serialize response")
+		}
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write(responseBody)
+		if err != nil {
+			panic("can't write response")
+		}
 	}
 }
 

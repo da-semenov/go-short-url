@@ -85,6 +85,5 @@ func NewPostgresHandler(ctx context.Context, dataSource string) (*PostgresHandle
 	postgresHandler := new(PostgresHandler)
 	postgresHandler.ctx = ctx
 	postgresHandler.pool = pool
-	//baseHandler.ErrNotFound = pgx.ErrNoRows
 	return postgresHandler, nil
 }

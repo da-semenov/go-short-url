@@ -21,7 +21,6 @@ func RunApp() {
 		log.Fatal(err)
 	}
 	fileRepository, err := storage.NewFileStorage(config.FileStorage)
-
 	if err != nil {
 		fmt.Println("can't init file repository", err)
 		return
@@ -29,6 +28,18 @@ func RunApp() {
 	postgresHandler, err := storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
 	if err != nil {
 		fmt.Println("can't init postgres handler", err)
+		return
+	}
+	if config.ReInit {
+		err = storage.ClearDatabase(postgresHandler)
+		if err != nil {
+			fmt.Println("can't clear database", err)
+			return
+		}
+	}
+	err = storage.InitDatabase(postgresHandler)
+	if err != nil {
+		fmt.Println("can't init database structure", err)
 		return
 	}
 	postgresRepository, err := storage.NewPostgresRepository(postgresHandler)

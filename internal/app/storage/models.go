@@ -8,7 +8,8 @@ type Repository interface {
 }
 
 type Repository2 interface {
-	FindByUser(key string) ([]UserURLs, error)
+	FindByUser(userID string) ([]UserURLs, error)
+	Save(userID string, shortURL string, originalURL string) error
 	Ping() (bool, error)
 }
 

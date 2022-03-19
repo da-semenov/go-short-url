@@ -12,6 +12,7 @@ type AppConfig struct {
 	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
 	FileStorage   string `env:"FILE_STORAGE_PATH" envDefault:"./data/storage.csv"`
 	DatabaseDSN   string `env:"DATABASE_DSN" envDefault:"postgresql://practicum:practicum@127.0.0.1:5432/postgres"`
+	ReInit        bool   `env:"REINIT" envDefault:"false"`
 }
 
 func (config *AppConfig) Init() error {
@@ -25,6 +26,7 @@ func (config *AppConfig) Init() error {
 	pflag.StringVarP(&config.BaseURL, "b", "b", config.BaseURL, "Base URL")
 	pflag.StringVarP(&config.FileStorage, "f", "f", config.FileStorage, "File storage path")
 	pflag.StringVarP(&config.DatabaseDSN, "d", "d", config.DatabaseDSN, "Database connection string")
+	pflag.BoolVarP(&config.ReInit, "r", "r", config.ReInit, "Re-init database")
 	pflag.Parse()
 
 	if config.BaseURL[len(config.BaseURL)-1:] != "/" {
