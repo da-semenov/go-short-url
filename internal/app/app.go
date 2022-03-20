@@ -49,7 +49,7 @@ func RunApp() {
 	}
 	service := server.NewService(fileRepository, config.BaseURL)
 	cs, _ := server.NewCryptoService()
-	userService := server.NewUserService(postgresRepository)
+	userService := server.NewUserService(postgresRepository, config.BaseURL)
 	h := handlers.EncodeURLHandler(service)
 	uh := handlers.NewUserHandler(userService, service, cs)
 	router := chi.NewRouter()
@@ -62,6 +62,7 @@ func RunApp() {
 		r.Get("/api/user/urls", uh.GetUserURLsHandler)
 		r.Get("/ping", uh.PingHandler)
 		r.Post("/api/shorten", uh.PostShortenHandler)
+		r.Post("/api/shorten/batch", uh.PostShortenBatchHandler)
 		r.Post("/", uh.PostMethodHandler)
 		r.Put("/", uh.DefaultHandler)
 		r.Patch("/", uh.DefaultHandler)

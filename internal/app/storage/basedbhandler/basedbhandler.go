@@ -2,6 +2,7 @@ package basedbhandler
 
 type DBHandler interface {
 	Execute(statement string, args ...interface{}) error
+	ExecuteBatch(statement string, args [][]interface{}) error
 	Query(statement string, args ...interface{}) (Rows, error)
 	QueryRow(statement string, args ...interface{}) (Row, error)
 	Close()
