@@ -110,11 +110,12 @@ func (s *FileStorage) copyStoreToTmp() (string, error) {
 	return dstPath, out.Close()
 }
 
-func (s *FileStorage) Find(id string) (string, error) {
-	if val, ok := s.store[id]; ok {
+func (s *FileStorage) Find(key string) (string, error) {
+	if val, ok := s.store[key]; ok {
 		return val, nil
+	} else {
+		return "", errors.New("value not found")
 	}
-	return "", errors.New("id not found")
 }
 
 func (s *FileStorage) FindByUser(id string) ([]UserURLs, error) {
@@ -122,19 +123,21 @@ func (s *FileStorage) FindByUser(id string) ([]UserURLs, error) {
 	return nil, errors.New("unexpecting using of method")
 }
 
-func (s *FileStorage) Save(id string, value string) error {
+func (s *FileStorage) Save(key string, value string) error {
 	var err error
-	if val, ok := s.store[id]; ok {
+	s.Lock()
+	defer s.Unlock()
+	if val, ok := s.store[key]; ok {
 		if val != value {
-			s.store[id] = value
-			rec := StoreRecord{Key: id, Value: value}
+			s.store[key] = value
+			rec := StoreRecord{Key: key, Value: value}
 			err = s.encoder.Encode(&rec)
 		} else {
-			s.store[id] = value
+			s.store[key] = value
 		}
 	} else {
-		s.store[id] = value
-		rec := StoreRecord{Key: id, Value: value}
+		s.store[key] = value
+		rec := StoreRecord{Key: key, Value: value}
 		err = s.encoder.Encode(&rec)
 	}
 	return err

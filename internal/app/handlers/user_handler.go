@@ -15,7 +15,7 @@ type CryptoService interface {
 type UserService interface {
 	GetURLsByUser(userID string) ([]urls.UserURLs, error)
 	Save(userID string, originalURL string, shortURL string) error
-	SaveBatch(userID string, srcDTO []urls.UserBatch) ([]urls.UserBatchResult, error)
+	SaveBatch(userID string, src []urls.UserBatch) ([]urls.UserBatchResult, error)
 	Ping() bool
 }
 
@@ -45,10 +45,8 @@ func (z *UserHandler) bakeCookie() (*http.Cookie, string, error) {
 }
 
 func (z *UserHandler) getTokenCookie(w http.ResponseWriter, r *http.Request) (string, error) {
-	var (
-		userID string
-		ok     bool
-	)
+	var userID string
+	var ok bool
 	token, err := r.Cookie("token")
 	if err == nil {
 		ok, userID = z.cryptoService.Validate(token.Value)
@@ -85,13 +83,13 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 	} else {
 		responseBody, err := json.Marshal(res)
 		if err != nil {
-			panic("can't serialize response")
+			panic("Can't serialize response")
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(responseBody)
 		if err != nil {
-			panic("can't write response")
+			panic("Can't write response")
 		}
 	}
 }
@@ -150,7 +148,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	if len(b) == 0 {
-		http.Error(w, "Body can't be empty", http.StatusBadRequest)
+		http.Error(w, "body can't be empty", http.StatusBadRequest)
 		return
 	} else {
 		var req urls.ShortenRequest
@@ -160,7 +158,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		}
 		res, err := z.service.GetID(req.URL)
 		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
+			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
 		err = z.userService.Save(userID, req.URL, res)
@@ -171,14 +169,14 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		result := urls.ShortenResponse{Result: res}
 		responseBody, err := json.Marshal(result)
 		if err != nil {
-			http.Error(w, "Can't serialize response", http.StatusBadRequest)
+			http.Error(w, "can't serialize response", http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(responseBody)
 		if err != nil {
-			http.Error(w, "Can't write response", http.StatusBadRequest)
+			http.Error(w, "can't write response", http.StatusBadRequest)
 			return
 		}
 		return
@@ -196,7 +194,6 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	var req []urls.UserBatch
 	if err := json.Unmarshal(b, &req); err != nil {
 		http.Error(w, "json error", http.StatusBadRequest)
@@ -207,12 +204,11 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-
 	responseBody, err := json.Marshal(result)
 	if err != nil {
-		panic("Can't serialize response")
+		http.Error(w, "can't serialize response", http.StatusBadRequest)
+		return
 	}
-
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(responseBody)

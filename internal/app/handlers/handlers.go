@@ -11,6 +11,10 @@ import (
 	"strings"
 )
 
+type ContextKey string
+
+var contextKeyUID = ContextKey("uid")
+
 type Service interface {
 	GetID(url string) (string, error)
 	GetURL(id string) (string, error)
@@ -28,13 +32,12 @@ func EncodeURLHandler(service Service) *URLHandler {
 }
 
 func decompress(data []byte) ([]byte, error) {
+	var res bytes.Buffer
 	r, err := gzip.NewReader(bytes.NewReader(data))
 	if err != nil {
 		return nil, err
 	}
 	defer r.Close()
-
-	var res bytes.Buffer
 	_, err = res.ReadFrom(r)
 	if err != nil {
 		return nil, fmt.Errorf("failed decompress data: %v", err)
@@ -59,7 +62,7 @@ func getRequestBody(r *http.Request) ([]byte, error) {
 }
 
 func (u *URLHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Unsupported request type",
+	http.Error(w, "unsupported request type",
 		http.StatusMethodNotAllowed)
 }
 
@@ -70,14 +73,18 @@ func (u *URLHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if len(b) == 0 {
-		http.Error(w, "Body can't be empty", http.StatusBadRequest)
+		http.Error(w, "body can't be empty", http.StatusBadRequest)
+		return
+	} else {
+		res, _ := u.service.GetID(string(b))
+		w.Header().Set("content-type", "text/plain")
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write([]byte(res))
+		if err != nil {
+			panic("Can't write response")
+		}
 		return
 	}
-
-	res, _ := u.service.GetID(string(b))
-	w.Header().Set("content-type", "text/plain")
-	w.WriteHeader(http.StatusCreated)
-	w.Write([]byte(res))
 }
 
 func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) {
@@ -87,7 +94,7 @@ func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if len(b) == 0 {
-		http.Error(w, "Body can't be empty", http.StatusBadRequest)
+		http.Error(w, "body can't be empty", http.StatusBadRequest)
 		return
 	} else {
 		var req urls.ShortenRequest
@@ -97,20 +104,20 @@ func (u *URLHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) 
 		}
 		res, err := u.service.GetID(req.URL)
 		if err != nil {
-			http.Error(w, "Bad request", http.StatusBadRequest)
+			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
 		result := urls.ShortenResponse{Result: res}
 		responseBody, err := json.Marshal(result)
 		if err != nil {
-			http.Error(w, "Can't serialize response", http.StatusBadRequest)
+			http.Error(w, "can't serialize response", http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(responseBody)
 		if err != nil {
-			http.Error(w, "Can't write response", http.StatusBadRequest)
+			http.Error(w, "can't write response", http.StatusBadRequest)
 			return
 		}
 		return
@@ -125,7 +132,7 @@ func (u *URLHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 	id := r.URL.Path[1:]
 	res, err := u.service.GetURL(id)
 	if err != nil {
-		http.Error(w, "URL was not found", http.StatusBadRequest)
+		http.Error(w, "url was not found", http.StatusBadRequest)
 		return
 	}
 	w.Header().Add("Location", res)
