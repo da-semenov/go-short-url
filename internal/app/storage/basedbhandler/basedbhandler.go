@@ -1,10 +1,14 @@
 package basedbhandler
 
+import (
+	"context"
+)
+
 type DBHandler interface {
-	Execute(statement string, args ...interface{}) error
-	ExecuteBatch(statement string, args [][]interface{}) error
-	Query(statement string, args ...interface{}) (Rows, error)
-	QueryRow(statement string, args ...interface{}) (Row, error)
+	Execute(ctx context.Context, statement string, args ...interface{}) error
+	ExecuteBatch(ctx context.Context, statement string, args [][]interface{}) error
+	Query(ctx context.Context, statement string, args ...interface{}) (Rows, error)
+	QueryRow(ctx context.Context, statement string, args ...interface{}) (Row, error)
 	Close()
 }
 

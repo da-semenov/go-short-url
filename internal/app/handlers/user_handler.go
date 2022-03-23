@@ -1,6 +1,7 @@
 package handlers
 
 import (
+	"context"
 	"encoding/json"
 	"errors"
 	"github.com/da-semenov/go-short-url/internal/app/urls"
@@ -13,27 +14,27 @@ type CryptoService interface {
 }
 
 type UserService interface {
-	GetURLsByUser(userID string) ([]urls.UserURLs, error)
-	Save(userID string, originalURL string, shortURL string) error
-	SaveBatch(userID string, src []urls.UserBatch) ([]urls.UserBatchResult, error)
-	Ping() bool
+	GetURLsByUser(ctx context.Context, userID string) ([]urls.UserURLs, error)
+	SaveUserURL(ctx context.Context, userID string, originalURL string, shortURL string) error
+	SaveBatch(ctx context.Context, userID string, src []urls.UserBatch) ([]urls.UserBatchResult, error)
+	GetURLByShort(ctx context.Context, shortURL string) (string, error)
+	GetID(url string) (string, string, error)
+	Ping(ctx context.Context) bool
 }
 
 type UserHandler struct {
 	userService   UserService
-	service       Service
 	cryptoService CryptoService
 }
 
-func NewUserHandler(userService UserService, service Service, cs CryptoService) *UserHandler {
+func NewUserHandler(userService UserService, cs CryptoService) *UserHandler {
 	var h UserHandler
 	h.userService = userService
-	h.service = service
 	h.cryptoService = cs
 	return &h
 }
 
-func (z *UserHandler) bakeCookie() (*http.Cookie, string, error) {
+func (z *UserHandler) makeCookie() (*http.Cookie, string, error) {
 	var c http.Cookie
 	userID, token, err := z.cryptoService.GetNewUserToken()
 	if err != nil {
@@ -53,7 +54,7 @@ func (z *UserHandler) getTokenCookie(w http.ResponseWriter, r *http.Request) (st
 	}
 	if errors.Is(err, http.ErrNoCookie) || !ok {
 		var newToken *http.Cookie
-		newToken, userID, err = z.bakeCookie()
+		newToken, userID, err = z.makeCookie()
 		if err != nil {
 			return "", err
 		}
@@ -72,7 +73,7 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	res, err := z.userService.GetURLsByUser(userID)
+	res, err := z.userService.GetURLsByUser(r.Context(), userID)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -83,19 +84,21 @@ func (z *UserHandler) GetUserURLsHandler(w http.ResponseWriter, r *http.Request)
 	} else {
 		responseBody, err := json.Marshal(res)
 		if err != nil {
-			panic("Can't serialize response")
+			http.Error(w, "can't serialize response", http.StatusBadRequest)
+			return
 		}
 		w.Header().Set("Content-Type", "application/json")
-		w.WriteHeader(http.StatusCreated)
+		w.WriteHeader(http.StatusOK)
 		_, err = w.Write(responseBody)
 		if err != nil {
-			panic("Can't write response")
+			http.Error(w, "can't write response", http.StatusBadRequest)
+			return
 		}
 	}
 }
 
 func (z *UserHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
-	if !z.userService.Ping() {
+	if !z.userService.Ping(r.Context()) {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
@@ -103,8 +106,12 @@ func (z *UserHandler) PingHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func (z *UserHandler) DefaultHandler(w http.ResponseWriter, r *http.Request) {
-	http.Error(w, "Unsupported request type",
-		http.StatusMethodNotAllowed)
+	w.WriteHeader(http.StatusBadRequest)
+	_, err := w.Write([]byte("unsupported request type"))
+	if err != nil {
+		http.Error(w, "can't write response", http.StatusBadRequest)
+		return
+	}
 }
 
 func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) {
@@ -121,19 +128,31 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 	if len(b) == 0 {
 		http.Error(w, "body can't be empty", http.StatusBadRequest)
 		return
-	}
-	res, _ := z.service.GetID(string(b))
-	err = z.userService.Save(userID, string(b), res)
-	if err != nil {
-		w.WriteHeader(http.StatusInternalServerError)
+	} else {
+		resURL, key, _ := z.userService.GetID(string(b))
+
+		err = z.userService.SaveUserURL(r.Context(), userID, string(b), key)
+		if errors.Is(err, urls.ErrDuplicateKey) {
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write([]byte(resURL))
+			if err != nil {
+				http.Error(w, "can't write response", http.StatusBadRequest)
+				return
+			}
+			return
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+		w.WriteHeader(http.StatusCreated)
+		_, err = w.Write([]byte(resURL))
+		if err != nil {
+			http.Error(w, "can't write response", http.StatusBadRequest)
+			return
+		}
 		return
 	}
-	w.WriteHeader(http.StatusCreated)
-	_, err = w.Write([]byte(res))
-	if err != nil {
-		panic("Can't write response")
-	}
-	return
 }
 
 func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request) {
@@ -156,23 +175,34 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 			http.Error(w, "json error", http.StatusBadRequest)
 			return
 		}
-		res, err := z.service.GetID(req.URL)
+		resURL, key, err := z.userService.GetID(req.URL)
 		if err != nil {
 			http.Error(w, "bad request", http.StatusBadRequest)
 			return
 		}
-		err = z.userService.Save(userID, req.URL, res)
-		if err != nil {
-			w.WriteHeader(http.StatusInternalServerError)
-			return
-		}
-		result := urls.ShortenResponse{Result: res}
+		result := urls.ShortenResponse{Result: resURL}
 		responseBody, err := json.Marshal(result)
 		if err != nil {
 			http.Error(w, "can't serialize response", http.StatusBadRequest)
 			return
 		}
 		w.Header().Set("Content-Type", "application/json")
+
+		err = z.userService.SaveUserURL(r.Context(), userID, req.URL, key)
+		if errors.Is(err, urls.ErrDuplicateKey) {
+			w.WriteHeader(http.StatusConflict)
+			_, err = w.Write(responseBody)
+			if err != nil {
+				http.Error(w, "can't write response", http.StatusBadRequest)
+				return
+			}
+			return
+		}
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
+
 		w.WriteHeader(http.StatusCreated)
 		_, err = w.Write(responseBody)
 		if err != nil {
@@ -199,7 +229,11 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		http.Error(w, "json error", http.StatusBadRequest)
 		return
 	}
-	result, err := z.userService.SaveBatch(userID, req)
+	result, err := z.userService.SaveBatch(r.Context(), userID, req)
+	if errors.Is(err, urls.ErrDuplicateKey) {
+		w.WriteHeader(http.StatusConflict)
+		return
+	}
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)
 		return
@@ -213,6 +247,24 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(responseBody)
 	if err != nil {
-		panic("Can't write response")
+		http.Error(w, "can't write response", http.StatusBadRequest)
+		return
+	}
+}
+
+func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
+	if r.URL.Path == "/" {
+		http.Error(w, "id was not provided", http.StatusBadRequest)
+		return
+	} else {
+		key := r.RequestURI[1:]
+		res, err := z.userService.GetURLByShort(r.Context(), key)
+		if err != nil {
+			http.Error(w, "url was not found", http.StatusBadRequest)
+			return
+		}
+		w.Header().Set("Location", res)
+		w.WriteHeader(http.StatusTemporaryRedirect)
+		return
 	}
 }

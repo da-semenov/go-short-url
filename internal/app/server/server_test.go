@@ -2,33 +2,11 @@ package server
 
 import (
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/mock"
 	"net/url"
 	"testing"
 )
 
-type RepositoryMock struct {
-	mock.Mock
-}
-
-func (r *RepositoryMock) Find(id string) (string, error) {
-	args := r.Called(id)
-	return args.String(0), nil
-}
-
-func (r *RepositoryMock) Save(id string, value string) error {
-	return nil
-}
-
-func mockEncode(str string) string {
-	return str
-}
-
 func TestURLService_GetID(t *testing.T) {
-	repo := new(RepositoryMock)
-	repo.On("Find", "encode_URL").Return("URL")
-	repo.On("Find", "").Return("URL")
-	repo.On("Save", "URL").Return("encode_URL")
 
 	type want struct {
 		path   string
@@ -43,20 +21,30 @@ func TestURLService_GetID(t *testing.T) {
 	}{
 		{
 			name: "GetID Test 1",
-			url:  "URL",
+			url:  "full_URL",
 			want: want{
-				path:   "/URL",
+				path:   "/full_URL",
 				scheme: "http",
 				host:   "localhost:8080",
 			},
 			wantErr: false,
 		},
+		{
+			name: "GetID Test 2",
+			url:  "",
+			want: want{
+				path:   "/short_URL",
+				scheme: "http",
+				host:   "localhost:8080",
+			},
+			wantErr: true,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			s := NewService(repo, "http://localhost:8080/")
-			s.encode = mockEncode
-			res, err := s.GetID(tt.url)
+			s := NewUserService(dbRepoMock, fileRepoMock, "http://localhost:8080/")
+			s.encode = MockEncode
+			res, _, err := s.GetID(tt.url)
 			if (err != nil) != tt.wantErr {
 				t.Errorf("GetID() error = %v, wantErr %v", err, tt.wantErr)
 				return
@@ -69,40 +57,6 @@ func TestURLService_GetID(t *testing.T) {
 				assert.Equal(t, tt.want.scheme, u.Scheme)
 				assert.Equal(t, tt.want.host, u.Host)
 				assert.Equal(t, tt.want.path, u.Path)
-			}
-		})
-	}
-}
-
-func TestURLService_GetURL(t *testing.T) {
-	repo := new(RepositoryMock)
-	repo.On("Find", "encode_URL").Return("URL", nil)
-	repo.On("Save", "URL").Return("encode_URL", nil)
-
-	tests := []struct {
-		name    string
-		key     string
-		want    string
-		wantErr bool
-	}{
-		{
-			name:    "GetURL Test 1",
-			key:     "encode_URL",
-			want:    "URL",
-			wantErr: false,
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			s := NewService(repo, "http://localhost:8080/")
-
-			got, err := s.GetURL(tt.key)
-			if (err != nil) != tt.wantErr {
-				t.Errorf("URL() error = %v, wantErr %v", err, tt.wantErr)
-				return
-			}
-			if got != tt.want {
-				t.Errorf("URL() got = %v, want %v", got, tt.want)
 			}
 		})
 	}

@@ -1,5 +1,9 @@
 package urls
 
+import "errors"
+
+var ErrDuplicateKey = errors.New("no rows in result set")
+
 type ShortenResponse struct {
 	Result string `json:"result"`
 }

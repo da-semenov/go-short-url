@@ -142,7 +142,3 @@ func (s *FileStorage) Save(key string, value string) error {
 	}
 	return err
 }
-
-func (s *FileStorage) Ping() (bool, error) {
-	return true, nil
-}

@@ -31,13 +31,13 @@ func RunApp() {
 		return
 	}
 	if config.ReInit {
-		err = storage.ClearDatabase(postgresHandler)
+		err = storage.ClearDatabase(context.Background(), postgresHandler)
 		if err != nil {
-			fmt.Println("can't clear database", err)
+			fmt.Println("can't clear database structure", err)
 			return
 		}
 	}
-	err = storage.InitDatabase(postgresHandler)
+	err = storage.InitDatabase(context.Background(), postgresHandler)
 	if err != nil {
 		fmt.Println("can't init database structure", err)
 		return
@@ -47,18 +47,17 @@ func RunApp() {
 		fmt.Println("can't init postgres repo", err)
 		return
 	}
-	service := server.NewService(fileRepository, config.BaseURL)
+
 	cs, _ := server.NewCryptoService()
-	userService := server.NewUserService(postgresRepository, config.BaseURL)
-	h := handlers.EncodeURLHandler(service)
-	uh := handlers.NewUserHandler(userService, service, cs)
+	userService := server.NewUserService(postgresRepository, fileRepository, config.BaseURL)
+	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.Logger)
 	router.Use(middleware.Recoverer)
 	router.Use(midlwr.GzipHandle)
 	router.Route("/", func(r chi.Router) {
-		r.Get("/{id}", h.GetMethodHandler)
+		r.Get("/{id}", uh.GetMethodHandler)
 		r.Get("/api/user/urls", uh.GetUserURLsHandler)
 		r.Get("/ping", uh.PingHandler)
 		r.Post("/api/shorten", uh.PostShortenHandler)

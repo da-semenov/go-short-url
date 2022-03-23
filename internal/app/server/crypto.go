@@ -15,16 +15,6 @@ type CryptoService struct {
 	nonce  []byte
 }
 
-func generateRandom(size int) ([]byte, error) {
-	b := make([]byte, size)
-	_, err := rand.Read(b)
-	if err != nil {
-		return nil, err
-	}
-
-	return b, nil
-}
-
 func NewCryptoService() (*CryptoService, error) {
 	var cs CryptoService
 	cs.key = []byte(strings.Repeat("a", aes.BlockSize))
@@ -33,6 +23,7 @@ func NewCryptoService() (*CryptoService, error) {
 	if err != nil {
 		return nil, err
 	}
+
 	cs.aesgcm, err = cipher.NewGCM(aesblock)
 	if err != nil {
 		return nil, err

@@ -1,9 +1,12 @@
 package storage
 
 import (
+	"context"
 	"errors"
 	"github.com/da-semenov/go-short-url/internal/app/database"
 	"github.com/da-semenov/go-short-url/internal/app/storage/basedbhandler"
+	"github.com/jackc/pgconn"
+	"github.com/jackc/pgerrcode"
 )
 
 type PostgresRepository struct {
@@ -16,8 +19,8 @@ func NewPostgresRepository(handler basedbhandler.DBHandler) (*PostgresRepository
 	return &repo, nil
 }
 
-func (r *PostgresRepository) Ping() (bool, error) {
-	row, err := r.handler.QueryRow("select 10")
+func (r *PostgresRepository) Ping(ctx context.Context) (bool, error) {
+	row, err := r.handler.QueryRow(ctx, "select 10")
 	if err != nil {
 		return false, err
 	}
@@ -29,15 +32,15 @@ func (r *PostgresRepository) Ping() (bool, error) {
 	return true, nil
 }
 
-func (r *PostgresRepository) FindByUser(userID string) ([]UserURLs, error) {
-	rows, err := r.handler.Query(database.GetURLsByUserID, userID)
+func (r *PostgresRepository) FindByUser(ctx context.Context, userID string) ([]UserURLs, error) {
+	rows, err := r.handler.Query(ctx, database.GetURLsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
 	var resArr []UserURLs
 	for rows.Next() {
 		var rec UserURLs
-		err := rows.Scan(&rec.ID, &rec.UserID, &rec.ShortURL, &rec.OriginalURL)
+		err := rows.Scan(&rec.ID, &rec.UserID, &rec.OriginalURL, &rec.ShortURL)
 		resArr = append(resArr, rec)
 		if err != nil {
 			return nil, err
@@ -46,15 +49,21 @@ func (r *PostgresRepository) FindByUser(userID string) ([]UserURLs, error) {
 	return resArr, nil
 }
 
-func (r *PostgresRepository) Save(userID string, shortURL string, originalURL string) error {
-	err := r.handler.Execute(database.InsertUserURL, userID, shortURL, originalURL)
+func (r *PostgresRepository) Save(ctx context.Context, userID string, originalURL string, shortURL string) error {
+	err := r.handler.Execute(ctx, database.InsertURL, userID, originalURL, shortURL)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == pgerrcode.UniqueViolation {
+			return &UniqueViolation
+		}
+	}
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *PostgresRepository) SaveBatch(src UserBatchURLs) error {
+func (r *PostgresRepository) SaveBatch(ctx context.Context, src UserBatchURLs) error {
 	var paramArr [][]interface{}
 	for _, obj := range src.List {
 		var paramLine []interface{}
@@ -64,31 +73,28 @@ func (r *PostgresRepository) SaveBatch(src UserBatchURLs) error {
 		paramLine = append(paramLine, obj.ShortURL)
 		paramArr = append(paramArr, paramLine)
 	}
-	err := r.handler.ExecuteBatch(database.InsertUserURL2, paramArr)
+	err := r.handler.ExecuteBatch(ctx, database.InsertURL, paramArr)
+	var pgErr *pgconn.PgError
+	if errors.As(err, &pgErr) {
+		if pgErr.Code == pgerrcode.UniqueViolation {
+			return &UniqueViolation
+		}
+	}
 	if err != nil {
 		return err
 	}
 	return nil
 }
 
-func (r *PostgresRepository) ReadBatch(userID string) (*UserBatchURLs, error) {
-	if userID == "" {
-		return nil, errors.New("userID is empty")
-	}
-	rows, err := r.handler.Query(database.AllUserURLsWithCorrelationIDByUserID, userID)
+func (r *PostgresRepository) FindByShort(ctx context.Context, shortURL string) (string, error) {
+	row, err := r.handler.QueryRow(ctx, database.GetOriginalURLByShort, shortURL)
 	if err != nil {
-		return nil, err
+		return "", err
 	}
-	var res UserBatchURLs
-	res.UserID = userID
-
-	for rows.Next() {
-		var e Element
-		err := rows.Scan(&e.CorrelationID, &e.OriginalURL, &e.ShortURL)
-		if err != nil {
-			return nil, err
-		}
-		res.List = append(res.List, e)
+	var res string
+	err = row.Scan(&res)
+	if err != nil {
+		return "", err
 	}
-	return &res, nil
+	return res, nil
 }
