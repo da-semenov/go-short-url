@@ -4,8 +4,8 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
+	"encoding/hex"
 	"strconv"
-	"strings"
 	"time"
 )
 
@@ -17,8 +17,7 @@ type CryptoService struct {
 
 func NewCryptoService() (*CryptoService, error) {
 	var cs CryptoService
-	cs.key = []byte(strings.Repeat("a", aes.BlockSize))
-
+	cs.key, _ = hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
 	aesblock, err := aes.NewCipher(cs.key)
 	if err != nil {
 		return nil, err
@@ -53,7 +52,6 @@ func (s *CryptoService) GetNewUserToken() (string, string, error) {
 		return "", "", nil
 	}
 	return user, string(token), nil
-
 }
 
 func (s *CryptoService) Validate(token string) (bool, string) {
