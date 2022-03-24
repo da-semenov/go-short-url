@@ -4,9 +4,13 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 	"net/http"
 )
+
+var ErrDuplicateKey = errors.New("duplicate key")
+var ErrNotFound = errors.New("no rows in result set")
 
 type CryptoService interface {
 	Validate(token string) (bool, string)
@@ -17,7 +21,7 @@ type UserService interface {
 	GetURLsByUser(ctx context.Context, userID string) ([]urls.UserURLs, error)
 	SaveUserURL(ctx context.Context, userID string, originalURL string, shortURL string) error
 	SaveBatch(ctx context.Context, userID string, src []urls.UserBatch) ([]urls.UserBatchResult, error)
-	GetURLByShort(ctx context.Context, shortURL string) (string, error)
+	GetURLByShort(ctx context.Context, userID string, shortURL string) (string, error)
 	GetID(url string) (string, string, error)
 	Ping(ctx context.Context) bool
 }
@@ -51,10 +55,15 @@ func (z *UserHandler) getTokenCookie(w http.ResponseWriter, r *http.Request) (st
 	token, err := r.Cookie("token")
 	if err == nil {
 		ok, userID = z.cryptoService.Validate(token.Value)
+		if !ok {
+			fmt.Println("invalid cookie")
+		}
 	}
 	if errors.Is(err, http.ErrNoCookie) || !ok {
+		fmt.Println("new cookie")
 		var newToken *http.Cookie
 		newToken, userID, err = z.makeCookie()
+		fmt.Println(userID, " ", newToken)
 		if err != nil {
 			return "", err
 		}
@@ -132,7 +141,7 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 		resURL, key, _ := z.userService.GetID(string(b))
 
 		err = z.userService.SaveUserURL(r.Context(), userID, string(b), key)
-		if errors.Is(err, urls.ErrDuplicateKey) {
+		if errors.Is(err, ErrDuplicateKey) {
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write([]byte(resURL))
 			if err != nil {
@@ -189,7 +198,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		w.Header().Set("Content-Type", "application/json")
 
 		err = z.userService.SaveUserURL(r.Context(), userID, req.URL, key)
-		if errors.Is(err, urls.ErrDuplicateKey) {
+		if errors.Is(err, ErrDuplicateKey) {
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write(responseBody)
 			if err != nil {
@@ -230,7 +239,7 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	result, err := z.userService.SaveBatch(r.Context(), userID, req)
-	if errors.Is(err, urls.ErrDuplicateKey) {
+	if errors.Is(err, ErrDuplicateKey) {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -253,12 +262,22 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 }
 
 func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path == "/" {
-		http.Error(w, "id was not provided", http.StatusBadRequest)
+	if r.RequestURI == "" || r.RequestURI[1:] == "" {
+		http.Error(w, "bad request", http.StatusBadRequest)
 		return
 	} else {
+		_, err := z.getTokenCookie(w, r)
+		if err != nil {
+			w.WriteHeader(http.StatusInternalServerError)
+			return
+		}
 		key := r.RequestURI[1:]
-		res, err := z.userService.GetURLByShort(r.Context(), key)
+		userID := ""
+		res, err := z.userService.GetURLByShort(r.Context(), userID, key)
+		if errors.Is(err, ErrNotFound) {
+			w.WriteHeader(http.StatusGone)
+			return
+		}
 		if err != nil {
 			http.Error(w, "url was not found", http.StatusBadRequest)
 			return

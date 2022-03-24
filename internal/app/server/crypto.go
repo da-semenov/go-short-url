@@ -4,8 +4,9 @@ import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/hex"
+	"encoding/base64"
 	"strconv"
+	"strings"
 	"time"
 )
 
@@ -17,7 +18,8 @@ type CryptoService struct {
 
 func NewCryptoService() (*CryptoService, error) {
 	var cs CryptoService
-	cs.key, _ = hex.DecodeString("6368616e676520746869732070617373776f726420746f206120736563726574")
+	cs.key = []byte(strings.Repeat("a", aes.BlockSize))
+
 	aesblock, err := aes.NewCipher(cs.key)
 	if err != nil {
 		return nil, err
@@ -38,7 +40,7 @@ func NewCryptoService() (*CryptoService, error) {
 }
 
 func (s *CryptoService) generateUserID() (string, error) {
-	uid := strconv.FormatInt(time.Now().Unix(), 10)
+	uid := strconv.FormatInt(time.Now().UnixNano(), 10)
 	return uid, nil
 }
 
@@ -51,11 +53,16 @@ func (s *CryptoService) GetNewUserToken() (string, string, error) {
 	if err != nil {
 		return "", "", nil
 	}
-	return user, string(token), nil
+	stringToken := base64.StdEncoding.EncodeToString(token)
+	return user, stringToken, nil
 }
 
 func (s *CryptoService) Validate(token string) (bool, string) {
-	res, err := s.decrypt([]byte(token))
+	t, err := base64.StdEncoding.DecodeString(token)
+	if err != nil {
+		return false, ""
+	}
+	res, err := s.decrypt(t)
 	if err != nil {
 		return false, ""
 	}

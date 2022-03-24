@@ -2,7 +2,6 @@ package storage
 
 import (
 	"context"
-	"github.com/jackc/pgerrcode"
 )
 
 type FileRepository interface {
@@ -13,7 +12,7 @@ type FileRepository interface {
 
 type DBRepository interface {
 	FindByUser(ctx context.Context, userID string) ([]UserURLs, error)
-	FindByShort(ctx context.Context, shortURL string) (string, error)
+	FindByShort(ctx context.Context, userID string, shortURL string) (string, error)
 	Save(ctx context.Context, userID string, originalURL string, shortURL string) error
 	SaveBatch(ctx context.Context, data UserBatchURLs) error
 	Ping(ctx context.Context) (bool, error)
@@ -45,7 +44,3 @@ type DatabaseError struct {
 func (t *DatabaseError) Error() string {
 	return t.Err.Error()
 }
-
-var (
-	UniqueViolation DatabaseError = DatabaseError{Code: pgerrcode.UniqueViolation}
-)

@@ -12,4 +12,17 @@ const GetURLsByUserID = "select id, user_id, original_url, short_url  \n" +
 	"where \nt1.id  = t2.url_id \n" +
 	"and t2.user_id=$1"
 
-const GetOriginalURLByShort = "select original_url from urls where short_url=$1"
+const GetOriginalURLByShort = "select original_url\n " +
+	"from urls t1, user_urls t2\n " +
+	"where \n " +
+	"t1.id  = t2.url_id\n " +
+	" and t2.is_deleted=0 " +
+	"and t1.short_url =$1"
+
+const GetOriginalURLByShortForUser = "select original_url\n " +
+	"from urls t1, user_urls t2\n " +
+	"where \n " +
+	"t1.id  = t2.url_id\n " +
+	" and t2.is_deleted=0 " +
+	"and t2.user_id=$1\n " +
+	"and t1.short_url =$2"

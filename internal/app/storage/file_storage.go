@@ -118,8 +118,7 @@ func (s *FileStorage) Find(key string) (string, error) {
 	}
 }
 
-func (s *FileStorage) FindByUser(id string) ([]UserURLs, error) {
-	// TODO
+func (s *FileStorage) FindByUser(key string) ([]UserURLs, error) {
 	return nil, errors.New("unexpecting using of method")
 }
 

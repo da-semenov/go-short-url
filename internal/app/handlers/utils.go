@@ -35,7 +35,7 @@ func getRequestBody(r *http.Request) ([]byte, error) {
 	if strings.Contains(r.Header.Get("Content-Encoding"), "gzip") {
 		decompressBody, err := decompress(b)
 		if err != nil {
-			panic(err)
+			return nil, err
 		}
 		return decompressBody, nil
 	}

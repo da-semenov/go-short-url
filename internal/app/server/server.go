@@ -8,6 +8,9 @@ import (
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 )
 
+var ErrDuplicateKey = errors.New("duplicate key")
+var ErrNotFound = errors.New("no rows in result set")
+
 type EncodeFunc func(str string) string
 
 type UserService struct {
@@ -49,6 +52,7 @@ func (s *UserService) GetURLsByUser(ctx context.Context, userID string) ([]urls.
 		return nil, err
 	}
 	var resList []urls.UserURLs
+	resList = make([]urls.UserURLs, 0)
 	for _, rec := range resArr {
 		u, err := s.mapUserURLs(&rec)
 		if err != nil {
@@ -67,7 +71,7 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 
 	err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
 	if errors.Is(err, &storage.UniqueViolation) {
-		return urls.ErrDuplicateKey
+		return ErrDuplicateKey
 	}
 	if err != nil {
 		return err
@@ -96,7 +100,7 @@ func (s *UserService) SaveBatch(ctx context.Context, userID string, src []urls.U
 	}
 	err = s.dbRepository.SaveBatch(ctx, res)
 	if errors.Is(err, &storage.UniqueViolation) {
-		return nil, urls.ErrDuplicateKey
+		return nil, ErrDuplicateKey
 	}
 	if err != nil {
 		return nil, err
@@ -104,11 +108,14 @@ func (s *UserService) SaveBatch(ctx context.Context, userID string, src []urls.U
 	return resurls, nil
 }
 
-func (s *UserService) GetURLByShort(ctx context.Context, shortURL string) (string, error) {
+func (s *UserService) GetURLByShort(ctx context.Context, userID string, shortURL string) (string, error) {
 	if shortURL == "" {
 		return "", errors.New("shortURL is empty")
 	}
-	originalURL, err := s.dbRepository.FindByShort(ctx, shortURL)
+	originalURL, err := s.dbRepository.FindByShort(ctx, userID, shortURL)
+	if errors.Is(err, &storage.NoRowFound) {
+		return "", ErrNotFound
+	}
 	if err != nil {
 		return "", err
 	}

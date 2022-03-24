@@ -9,6 +9,9 @@ import (
 	"github.com/jackc/pgerrcode"
 )
 
+var UniqueViolation DatabaseError = DatabaseError{Code: pgerrcode.UniqueViolation}
+var NoRowFound DatabaseError = DatabaseError{Err: errors.New("no rows in result set")}
+
 type PostgresRepository struct {
 	handler basedbhandler.DBHandler
 }
@@ -50,7 +53,7 @@ func (r *PostgresRepository) FindByUser(ctx context.Context, userID string) ([]U
 }
 
 func (r *PostgresRepository) Save(ctx context.Context, userID string, originalURL string, shortURL string) error {
-	err := r.handler.Execute(ctx, database.InsertURL, userID, originalURL, shortURL)
+	err := r.handler.Execute(ctx, database.InsertURL, userID, nil, originalURL, shortURL)
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		if pgErr.Code == pgerrcode.UniqueViolation {
@@ -86,13 +89,23 @@ func (r *PostgresRepository) SaveBatch(ctx context.Context, src UserBatchURLs) e
 	return nil
 }
 
-func (r *PostgresRepository) FindByShort(ctx context.Context, shortURL string) (string, error) {
-	row, err := r.handler.QueryRow(ctx, database.GetOriginalURLByShort, shortURL)
+func (r *PostgresRepository) FindByShort(ctx context.Context, userID string, shortURL string) (string, error) {
+	var err error
+	var row basedbhandler.Row
+	if userID == "" {
+		row, err = r.handler.QueryRow(ctx, database.GetOriginalURLByShort, shortURL)
+	} else {
+		row, err = r.handler.QueryRow(ctx, database.GetOriginalURLByShortForUser, userID, shortURL)
+	}
 	if err != nil {
 		return "", err
 	}
 	var res string
+
 	err = row.Scan(&res)
+	if err != nil && err.Error() == "no rows in result set" {
+		return "", &NoRowFound
+	}
 	if err != nil {
 		return "", err
 	}
