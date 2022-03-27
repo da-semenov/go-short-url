@@ -23,6 +23,7 @@ vendor/
 .vscode
 
 # data files
-data/storage.txt
+data/
+data/storage.csv
 internal/app/data
 *.dat

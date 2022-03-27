@@ -1,6 +1,7 @@
 package server
 
 import (
+	"os"
 	"testing"
 )
 
@@ -13,4 +14,5 @@ func TestMain(m *testing.M) {
 	fileRepoMock.On("Find", "").Return("full_URL")
 	fileRepoMock.On("SaveUserURL", "full_URL").Return("short_URL")
 	dbRepoMock = new(DBRepositoryMock)
+	os.Exit(m.Run())
 }

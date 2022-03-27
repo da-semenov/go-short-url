@@ -134,7 +134,7 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if len(b) == 0 {
+	if string(b) == "" {
 		http.Error(w, "body can't be empty", http.StatusBadRequest)
 		return
 	} else {
@@ -142,6 +142,7 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 
 		err = z.userService.SaveUserURL(r.Context(), userID, string(b), key)
 		if errors.Is(err, ErrDuplicateKey) {
+			fmt.Println(key)
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write([]byte(resURL))
 			if err != nil {
@@ -175,7 +176,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
-	if len(b) == 0 {
+	if string(b) == "" {
 		http.Error(w, "body can't be empty", http.StatusBadRequest)
 		return
 	} else {
@@ -233,6 +234,7 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	var req []urls.UserBatch
 	if err := json.Unmarshal(b, &req); err != nil {
 		http.Error(w, "json error", http.StatusBadRequest)
@@ -247,11 +249,13 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		w.WriteHeader(http.StatusInternalServerError)
 		return
 	}
+
 	responseBody, err := json.Marshal(result)
 	if err != nil {
 		http.Error(w, "can't serialize response", http.StatusBadRequest)
 		return
 	}
+	
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(responseBody)

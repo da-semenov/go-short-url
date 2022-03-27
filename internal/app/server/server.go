@@ -47,10 +47,15 @@ func (s *UserService) GetURLsByUser(ctx context.Context, userID string) ([]urls.
 	if userID == "" {
 		return nil, errors.New("user_id is empty")
 	}
-	resArr, err := s.dbRepository.FindByUser(ctx, userID)
-	if err != nil {
-		return nil, err
+	var resArr []storage.UserURLs
+	var err error
+	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
+		resArr, err = s.dbRepository.FindByUser(ctx, userID)
+		if err != nil {
+			return nil, err
+		}
 	}
+
 	var resList []urls.UserURLs
 	resList = make([]urls.UserURLs, 0)
 	for _, rec := range resArr {
@@ -69,12 +74,14 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 		return err
 	}
 
-	err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
-	if errors.Is(err, &storage.UniqueViolation) {
-		return ErrDuplicateKey
-	}
-	if err != nil {
-		return err
+	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
+		err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
+		if errors.Is(err, &storage.UniqueViolation) {
+			return ErrDuplicateKey
+		}
+		if err != nil {
+			return err
+		}
 	}
 	return nil
 }
@@ -112,14 +119,19 @@ func (s *UserService) GetURLByShort(ctx context.Context, userID string, shortURL
 	if shortURL == "" {
 		return "", errors.New("shortURL is empty")
 	}
-	originalURL, err := s.dbRepository.FindByShort(ctx, userID, shortURL)
-	if errors.Is(err, &storage.NoRowFound) {
-		return "", ErrNotFound
-	}
+	originalURL, err := s.fileRepository.Find(shortURL)
 	if err != nil {
 		return "", err
 	}
-
+	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
+		originalURL, err = s.dbRepository.FindByShort(ctx, userID, shortURL)
+		if errors.Is(err, &storage.NoRowFound) {
+			return "", ErrNotFound
+		}
+		if err != nil {
+			return "", err
+		}
+	}
 	return originalURL, nil
 }
 

@@ -6,7 +6,7 @@ import (
 	conf "github.com/da-semenov/go-short-url/internal/app/config"
 	"github.com/da-semenov/go-short-url/internal/app/handlers"
 	midlwr "github.com/da-semenov/go-short-url/internal/app/middleware"
-	"github.com/da-semenov/go-short-url/internal/app/server"
+	serv "github.com/da-semenov/go-short-url/internal/app/server"
 	"github.com/da-semenov/go-short-url/internal/app/storage"
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
@@ -25,31 +25,39 @@ func RunApp() {
 		fmt.Println("can't init file repository", err)
 		return
 	}
-	postgresHandler, err := storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
-	if err != nil {
-		fmt.Println("can't init postgres handler", err)
-		return
-	}
-	if config.ReInit {
-		err = storage.ClearDatabase(context.Background(), postgresHandler)
+	var postgresHandler *storage.PostgresHandler
+	var postgresRepository *storage.PostgresRepository
+	if config.DatabaseDSN == "" {
+		postgresHandler = nil
+		postgresRepository = nil
+	} else {
+		postgresHandler, err = storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
 		if err != nil {
-			fmt.Println("can't clear database structure", err)
+			fmt.Println("can't init postgres handler", err)
+			return
+		}
+		if config.ReInit {
+			err = storage.ClearDatabase(context.Background(), postgresHandler)
+			if err != nil {
+				fmt.Println("can't clear database structure", err)
+				return
+			}
+		}
+		err = storage.InitDatabase(context.Background(), postgresHandler)
+		if err != nil {
+			fmt.Println("can't init database structure", err)
+			return
+		}
+		postgresRepository, err = storage.NewPostgresRepository(postgresHandler)
+		if err != nil {
+			fmt.Println("can't init postgres repository", err)
 			return
 		}
 	}
-	err = storage.InitDatabase(context.Background(), postgresHandler)
-	if err != nil {
-		fmt.Println("can't init database structure", err)
-		return
-	}
-	postgresRepository, err := storage.NewPostgresRepository(postgresHandler)
-	if err != nil {
-		fmt.Println("can't init postgres repo", err)
-		return
-	}
 
-	cs, _ := server.NewCryptoService()
-	userService := server.NewUserService(postgresRepository, fileRepository, config.BaseURL)
+	cs, _ := serv.NewCryptoService()
+	userService := serv.NewUserService(postgresRepository, fileRepository, config.BaseURL)
+
 	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)

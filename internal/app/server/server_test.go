@@ -20,7 +20,7 @@ func TestURLService_GetID(t *testing.T) {
 		wantErr bool
 	}{
 		{
-			name: "GetID Test 1",
+			name: "Test 1. Get ID.",
 			url:  "full_URL",
 			want: want{
 				path:   "/full_URL",
@@ -30,7 +30,7 @@ func TestURLService_GetID(t *testing.T) {
 			wantErr: false,
 		},
 		{
-			name: "GetID Test 2",
+			name: "Test 2. Get ID.",
 			url:  "",
 			want: want{
 				path:   "/short_URL",

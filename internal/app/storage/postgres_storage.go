@@ -9,8 +9,8 @@ import (
 	"github.com/jackc/pgerrcode"
 )
 
-var UniqueViolation DatabaseError = DatabaseError{Code: pgerrcode.UniqueViolation}
-var NoRowFound DatabaseError = DatabaseError{Err: errors.New("no rows in result set")}
+var UniqueViolation = DatabaseError{Code: pgerrcode.UniqueViolation}
+var NoRowFound = DatabaseError{Err: errors.New("no rows in result set")}
 
 type PostgresRepository struct {
 	handler basedbhandler.DBHandler

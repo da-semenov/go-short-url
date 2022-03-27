@@ -37,8 +37,8 @@ func (r *DBRepositoryMock) FindByUser(ctx context.Context, userID string) ([]sto
 	return []storage.UserURLs{res}, args.Error(2)
 }
 
-func (r *DBRepositoryMock) FindByShort(ctx context.Context, shortURL string) (string, error) {
-	args := r.Called(shortURL)
+func (r *DBRepositoryMock) FindByShort(ctx context.Context, userID string, shortURL string) (string, error) {
+	args := r.Called(userID, shortURL)
 	return args.String(0), args.Error(1)
 }
 
