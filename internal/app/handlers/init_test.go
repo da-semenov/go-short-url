@@ -26,11 +26,11 @@ func TestMain(m *testing.M) {
 	userService.On("SaveBatch", "user_id", d).Return("correlation1", "short_URL_1", nil)
 
 	userService.On("SaveUserURL", "user_id", "original_URL", "short_URL").Return(nil)
-	userService.On("SaveUserURL", "user_id", "bad_URL", "short_URL").Return(ErrDuplicateKey)
+	userService.On("SaveUserURL", "user_id", "bad_URL", "short_URL").Return(urls.ErrDuplicateKey)
 	userService.On("GetURLByShort", "user_id", "short_URL").Return("original_URL", nil)
 	userService.On("GetURLByShort", "", "short_URL").Return("original_URL", nil)
-	userService.On("GetURLByShort", "user_id", "badURL").Return("", ErrNotFound)
-	userService.On("GetURLByShort", "", "badURL").Return("", ErrNotFound)
+	userService.On("GetURLByShort", "user_id", "badURL").Return("", urls.ErrNotFound)
+	userService.On("GetURLByShort", "", "badURL").Return("", urls.ErrNotFound)
 
 	cryptoService := new(CryptoServiceMock)
 	cryptoService.On("Validate", "user_id").Return(true, "user_id")
