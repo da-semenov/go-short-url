@@ -14,10 +14,10 @@ var userHandler *UserHandler
 
 func TestMain(m *testing.M) {
 	userService = new(UserServiceMock)
-	userService.On("ZipURL", "full_URL").Return("short_URL", "short_URL", nil)
-	userService.On("ZipURL", "original_URL").Return("short_URL", "short_URL", nil)
-	userService.On("ZipURL", "bad_URL").Return("short_URL", "short_URL", nil)
-	userService.On("ZipURL", "").Return("", "", errors.New("url is empty"))
+	userService.On("GetID", "full_URL").Return("short_URL", "short_URL", nil)
+	userService.On("GetID", "original_URL").Return("short_URL", "short_URL", nil)
+	userService.On("GetID", "bad_URL").Return("short_URL", "short_URL", nil)
+	userService.On("GetID", "").Return("", "", errors.New("url is empty"))
 
 	userService.On("GetURLsByUser", "user_id").Return("url-for-user-1", nil)
 

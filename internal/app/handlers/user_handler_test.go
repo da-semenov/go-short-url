@@ -404,7 +404,7 @@ func TestUserHandler_DefaultHandler(t *testing.T) {
 			if err != nil {
 				t.Errorf("Can't read response body, %e", err)
 			}
-			assert.Equal(t, "Unsupported request type", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
+			assert.Equal(t, "unsupported request type", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
 		})
 	}
 }
