@@ -238,7 +238,7 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	result, err := z.userService.SaveBatch(r.Context(), userID, req)
-	if errors.Is(err, urls.ErrDuplicateKey) {
+	if errors.As(err, &urls.ErrDuplicateKey) {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -275,7 +275,7 @@ func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 		key := r.RequestURI[1:]
 		userID := ""
 		res, err := z.userService.GetURLByShort(r.Context(), userID, key)
-		if errors.Is(err, urls.ErrNotFound) {
+		if errors.As(err, &urls.ErrNotFound) {
 			w.WriteHeader(http.StatusGone)
 			return
 		}
