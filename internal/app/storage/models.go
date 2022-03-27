@@ -2,7 +2,12 @@ package storage
 
 import (
 	"context"
+	"errors"
+	"github.com/jackc/pgerrcode"
 )
+
+var UniqueViolation DatabaseError = DatabaseError{Code: pgerrcode.UniqueViolation}
+var NoRowFound DatabaseError = DatabaseError{Err: errors.New("no rows in result set")}
 
 type FileRepository interface {
 	Find(key string) (string, error)
