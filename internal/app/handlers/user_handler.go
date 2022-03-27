@@ -9,9 +9,6 @@ import (
 	"net/http"
 )
 
-var ErrDuplicateKey = errors.New("duplicate key")
-var ErrNotFound = errors.New("no rows in result set")
-
 type CryptoService interface {
 	Validate(token string) (bool, string)
 	GetNewUserToken() (string, string, error)
@@ -141,7 +138,7 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 		resURL, key, _ := z.userService.GetID(string(b))
 
 		err = z.userService.SaveUserURL(r.Context(), userID, string(b), key)
-		if errors.Is(err, ErrDuplicateKey) {
+		if errors.As(err, &urls.ErrDuplicateKey) {
 			fmt.Println(key)
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write([]byte(resURL))
@@ -199,7 +196,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		w.Header().Set("Content-Type", "application/json")
 
 		err = z.userService.SaveUserURL(r.Context(), userID, req.URL, key)
-		if errors.Is(err, ErrDuplicateKey) {
+		if errors.As(err, &urls.ErrDuplicateKey) {
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write(responseBody)
 			if err != nil {
@@ -241,7 +238,7 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		return
 	}
 	result, err := z.userService.SaveBatch(r.Context(), userID, req)
-	if errors.Is(err, ErrDuplicateKey) {
+	if errors.Is(err, urls.ErrDuplicateKey) {
 		w.WriteHeader(http.StatusConflict)
 		return
 	}
@@ -255,7 +252,7 @@ func (z *UserHandler) PostShortenBatchHandler(w http.ResponseWriter, r *http.Req
 		http.Error(w, "can't serialize response", http.StatusBadRequest)
 		return
 	}
-	
+
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	_, err = w.Write(responseBody)
@@ -278,7 +275,7 @@ func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 		key := r.RequestURI[1:]
 		userID := ""
 		res, err := z.userService.GetURLByShort(r.Context(), userID, key)
-		if errors.Is(err, ErrNotFound) {
+		if errors.Is(err, urls.ErrNotFound) {
 			w.WriteHeader(http.StatusGone)
 			return
 		}

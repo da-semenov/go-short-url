@@ -1,5 +1,7 @@
 package urls
 
+import "errors"
+
 type ShortenResponse struct {
 	Result string `json:"result"`
 }
@@ -22,3 +24,6 @@ type UserBatchResult struct {
 	CorrelationID string `json:"correlation_id"`
 	ShortURL      string `json:"short_url"`
 }
+
+var ErrDuplicateKey = errors.New("duplicate key")
+var ErrNotFound = errors.New("no rows in result set")
