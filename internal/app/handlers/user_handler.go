@@ -196,7 +196,7 @@ func (z *UserHandler) PostShortenHandler(w http.ResponseWriter, r *http.Request)
 		w.Header().Set("Content-Type", "application/json")
 
 		err = z.userService.SaveUserURL(r.Context(), userID, req.URL, key)
-		if errors.As(err, &urls.ErrDuplicateKey) {
+		if errors.Is(err, urls.ErrDuplicateKey) {
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write(responseBody)
 			if err != nil {
