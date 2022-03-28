@@ -275,7 +275,7 @@ func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 		key := r.RequestURI[1:]
 		userID := ""
 		res, err := z.userService.GetURLByShort(r.Context(), userID, key)
-		if errors.As(err, &urls.ErrNotFound) {
+		if errors.Is(err, urls.ErrNotFound) {
 			w.WriteHeader(http.StatusGone)
 			return
 		}

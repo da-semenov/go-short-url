@@ -8,9 +8,6 @@ import (
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 )
 
-var ErrDuplicateKey = errors.New("duplicate key")
-var ErrNotFound = errors.New("no rows in result set")
-
 type EncodeFunc func(str string) string
 
 type UserService struct {
@@ -77,7 +74,7 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
 		err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
 		if errors.Is(err, &storage.UniqueViolation) {
-			return ErrDuplicateKey
+			return urls.ErrDuplicateKey
 		}
 		if err != nil {
 			return err
@@ -107,7 +104,7 @@ func (s *UserService) SaveBatch(ctx context.Context, userID string, src []urls.U
 	}
 	err = s.dbRepository.SaveBatch(ctx, res)
 	if errors.Is(err, &storage.UniqueViolation) {
-		return nil, ErrDuplicateKey
+		return nil, urls.ErrDuplicateKey
 	}
 	if err != nil {
 		return nil, err
@@ -126,7 +123,7 @@ func (s *UserService) GetURLByShort(ctx context.Context, userID string, shortURL
 	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
 		originalURL, err = s.dbRepository.FindByShort(ctx, userID, shortURL)
 		if errors.Is(err, &storage.NoRowFound) {
-			return "", ErrNotFound
+			return "", urls.ErrNotFound
 		}
 		if err != nil {
 			return "", err
