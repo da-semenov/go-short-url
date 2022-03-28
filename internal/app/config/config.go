@@ -29,12 +29,6 @@ func (config *AppConfig) Init() error {
 	pflag.BoolVarP(&config.ReInit, "r", "r", config.ReInit, "Re-init database")
 	pflag.Parse()
 
-	if config.BaseURL == "" || config.FileStorage == "" || config.ServerAddress == "" || config.DatabaseDSN == "" {
-		if err := env.Parse(&config); err != nil {
-			fmt.Println("can't load service config", err)
-			return err
-		}
-	}
 	if config.BaseURL[len(config.BaseURL)-1:] != "/" {
 		config.BaseURL += "/"
 	}

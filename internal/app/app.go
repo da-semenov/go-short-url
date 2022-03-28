@@ -57,7 +57,6 @@ func RunApp() {
 
 	cs, _ := serv.NewCryptoService()
 	userService := serv.NewUserService(postgresRepository, fileRepository, config.BaseURL)
-
 	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)
