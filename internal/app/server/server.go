@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"github.com/da-semenov/go-short-url/internal/app/storage"
+	storage "github.com/da-semenov/go-short-url/internal/app/storage"
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 )
 
@@ -71,14 +71,12 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 		return err
 	}
 
-	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
-		err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
-		if errors.Is(err, &storage.UniqueViolation) {
-			return urls.ErrDuplicateKey
-		}
-		if err != nil {
-			return err
-		}
+	err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
+	if errors.Is(err, &storage.UniqueViolation) {
+		return urls.ErrDuplicateKey
+	}
+	if err != nil {
+		return err
 	}
 	return nil
 }
@@ -116,19 +114,14 @@ func (s *UserService) GetURLByShort(ctx context.Context, userID string, shortURL
 	if shortURL == "" {
 		return "", errors.New("shortURL is empty")
 	}
-	originalURL, err := s.fileRepository.Find(shortURL)
+	originalURL, err := s.dbRepository.FindByShort(ctx, userID, shortURL)
+	if errors.Is(err, &storage.NoRowFound) {
+		return "", urls.ErrNotFound
+	}
 	if err != nil {
 		return "", err
 	}
-	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
-		originalURL, err = s.dbRepository.FindByShort(ctx, userID, shortURL)
-		if errors.Is(err, &storage.NoRowFound) {
-			return "", urls.ErrNotFound
-		}
-		if err != nil {
-			return "", err
-		}
-	}
+
 	return originalURL, nil
 }
 
