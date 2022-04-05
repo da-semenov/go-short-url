@@ -20,42 +20,43 @@ func RunApp() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
 	fileRepository, err := storage.NewFileStorage(config.FileStorage)
 	if err != nil {
 		fmt.Println("can't init file repository", err)
 		return
 	}
-	var postgresHandler *storage.PostgresHandler
-	var postgresRepository *storage.PostgresRepository
-	if config.DatabaseDSN == "" {
-		postgresHandler = nil
-		postgresRepository = nil
-	} else {
-		postgresHandler, err = storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
+
+	postgresHandler, err := storage.NewPostgresHandler(context.Background(), config.DatabaseDSN)
+	if err != nil {
+		fmt.Println("can't init postgres handler", err)
+		return
+	}
+
+	if config.ReInit {
+		err = storage.ClearDatabase(context.Background(), postgresHandler)
 		if err != nil {
-			fmt.Println("can't init postgres handler", err)
-			return
-		}
-		if config.ReInit {
-			err = storage.ClearDatabase(context.Background(), postgresHandler)
-			if err != nil {
-				fmt.Println("can't clear database structure", err)
-				return
-			}
-		}
-		err = storage.InitDatabase(context.Background(), postgresHandler)
-		if err != nil {
-			fmt.Println("can't init database structure", err)
-			return
-		}
-		postgresRepository, err = storage.NewPostgresRepository(postgresHandler)
-		if err != nil {
-			fmt.Println("can't init postgres repository", err)
+			fmt.Println("can't clear database structure", err)
 			return
 		}
 	}
+	err = storage.InitDatabase(context.Background(), postgresHandler)
+	if err != nil {
+		fmt.Println("can't init database structure", err)
+		return
+	}
 
-	cs, _ := serv.NewCryptoService()
+	postgresRepository, err := storage.NewPostgresRepository(postgresHandler)
+	if err != nil {
+		fmt.Println("can't init postgres repository", err)
+		return
+	}
+
+	cs, err := serv.NewCryptoService()
+	if err != nil {
+		fmt.Println("error in crypto-service", err)
+		return
+	}
 	userService := serv.NewUserService(postgresRepository, fileRepository, config.BaseURL)
 	uh := handlers.NewUserHandler(userService, cs)
 	router := chi.NewRouter()
