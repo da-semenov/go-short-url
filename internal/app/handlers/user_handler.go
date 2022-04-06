@@ -23,15 +23,21 @@ type UserService interface {
 	Ping(ctx context.Context) bool
 }
 
+type DeleteService interface {
+	DeleteBatch(ctx context.Context, userID string, URLList []urls.BatchDelete) error
+}
+
 type UserHandler struct {
 	userService   UserService
 	cryptoService CryptoService
+	DeleteService DeleteService
 }
 
-func NewUserHandler(userService UserService, cs CryptoService) *UserHandler {
+func NewUserHandler(us UserService, cs CryptoService, ds DeleteService) *UserHandler {
 	var h UserHandler
-	h.userService = userService
+	h.userService = us
 	h.cryptoService = cs
+	h.DeleteService = ds
 	return &h
 }
 
@@ -139,7 +145,6 @@ func (z *UserHandler) PostMethodHandler(w http.ResponseWriter, r *http.Request) 
 
 		err = z.userService.SaveUserURL(r.Context(), userID, string(b), key)
 		if errors.As(err, &urls.ErrDuplicateKey) {
-			fmt.Println(key)
 			w.WriteHeader(http.StatusConflict)
 			_, err = w.Write([]byte(resURL))
 			if err != nil {
@@ -287,4 +292,29 @@ func (z *UserHandler) GetMethodHandler(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
 	}
+}
+
+func (z *UserHandler) AsyncDeleteHandler(w http.ResponseWriter, r *http.Request) {
+	b, err := getRequestBody(r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	userID, err := z.getTokenCookie(w, r)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+
+	var req []urls.BatchDelete
+	if err := json.Unmarshal(b, &req); err != nil {
+		http.Error(w, "json error", http.StatusBadRequest)
+		return
+	}
+	err = z.DeleteService.DeleteBatch(r.Context(), userID, req)
+	if err != nil {
+		w.WriteHeader(http.StatusInternalServerError)
+		return
+	}
+	w.WriteHeader(http.StatusAccepted)
 }

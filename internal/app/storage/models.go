@@ -46,6 +46,12 @@ type DatabaseError struct {
 	Code string
 }
 
+type DeleteRepository interface {
+	BatchDelete(ctx context.Context, userID string, URLList []BatchDeleteURL) error
+}
+
+type BatchDeleteURL = string
+
 func (t *DatabaseError) Error() string {
 	return t.Err.Error()
 }

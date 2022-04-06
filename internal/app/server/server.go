@@ -4,7 +4,7 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	storage "github.com/da-semenov/go-short-url/internal/app/storage"
+	"github.com/da-semenov/go-short-url/internal/app/storage"
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 )
 
@@ -44,13 +44,9 @@ func (s *UserService) GetURLsByUser(ctx context.Context, userID string) ([]urls.
 	if userID == "" {
 		return nil, errors.New("user_id is empty")
 	}
-	var resArr []storage.UserURLs
-	var err error
-	if myValue, ok := s.dbRepository.(*storage.PostgresRepository); ok && myValue != nil {
-		resArr, err = s.dbRepository.FindByUser(ctx, userID)
-		if err != nil {
-			return nil, err
-		}
+	resArr, err := s.dbRepository.FindByUser(ctx, userID)
+	if err != nil {
+		return nil, err
 	}
 
 	var resList []urls.UserURLs
