@@ -6,17 +6,17 @@ import (
 	"github.com/da-semenov/go-short-url/internal/app/storage/basedbhandler"
 )
 
-type DeleteRepo struct {
+type DeleteRepository struct {
 	handler basedbhandler.DBHandler
 }
 
-func NewDeleteRepository(handler basedbhandler.DBHandler) (*DeleteRepo, error) {
-	var repo DeleteRepo
+func NewDeleteRepository(handler basedbhandler.DBHandler) (*DeleteRepository, error) {
+	var repo DeleteRepository
 	repo.handler = handler
 	return &repo, nil
 }
 
-func (r *DeleteRepo) BatchDelete(ctx context.Context, userID string, URLList []BatchDeleteURL) error {
+func (r *DeleteRepository) BatchDelete(ctx context.Context, userID string, URLList []string) error {
 	var paramArr [][]interface{}
 	for _, l := range URLList {
 		var paramLine []interface{}

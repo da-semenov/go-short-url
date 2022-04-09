@@ -24,7 +24,7 @@ type UserService interface {
 }
 
 type DeleteService interface {
-	DeleteBatch(ctx context.Context, userID string, URLList []urls.BatchDelete) error
+	DeleteBatch(ctx context.Context, userID string, URLList []string) error
 }
 
 type UserHandler struct {
@@ -306,11 +306,12 @@ func (z *UserHandler) AsyncDeleteHandler(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	var req []urls.BatchDelete
+	var req []string
 	if err := json.Unmarshal(b, &req); err != nil {
 		http.Error(w, "json error", http.StatusBadRequest)
 		return
 	}
+
 	err = z.DeleteService.DeleteBatch(r.Context(), userID, req)
 	if err != nil {
 		w.WriteHeader(http.StatusInternalServerError)

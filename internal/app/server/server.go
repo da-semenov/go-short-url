@@ -4,20 +4,20 @@ import (
 	"context"
 	"encoding/base64"
 	"errors"
-	"github.com/da-semenov/go-short-url/internal/app/storage"
+	"github.com/da-semenov/go-short-url/internal/app/models"
 	"github.com/da-semenov/go-short-url/internal/app/urls"
 )
 
 type EncodeFunc func(str string) string
 
 type UserService struct {
-	dbRepository   storage.DBRepository
-	fileRepository storage.FileRepository
+	dbRepository   models.DBRepository
+	fileRepository models.FileRepository
 	encode         EncodeFunc
 	baseURL        string
 }
 
-func NewUserService(repoDB storage.DBRepository, repoFile storage.FileRepository, baseURL string) *UserService {
+func NewUserService(repoDB models.DBRepository, repoFile models.FileRepository, baseURL string) *UserService {
 	var s UserService
 	s.dbRepository = repoDB
 	s.fileRepository = repoFile
@@ -36,7 +36,7 @@ func (s *UserService) GetID(url string) (string, string, error) {
 	return s.baseURL + key, key, nil
 }
 
-func (s *UserService) mapUserURLs(src *storage.UserURLs) (*urls.UserURLs, error) {
+func (s *UserService) mapUserURLs(src *models.UserURLs) (*urls.UserURLs, error) {
 	return &urls.UserURLs{ShortURL: s.baseURL + src.ShortURL, OriginalURL: src.OriginalURL}, nil
 }
 
@@ -68,7 +68,7 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 	}
 
 	err = s.dbRepository.Save(ctx, userID, originalURL, shortURL)
-	if errors.Is(err, &storage.UniqueViolation) {
+	if errors.Is(err, &models.UniqueViolation) {
 		return urls.ErrDuplicateKey
 	}
 	if err != nil {
@@ -79,13 +79,13 @@ func (s *UserService) SaveUserURL(ctx context.Context, userID string, originalUR
 
 func (s *UserService) SaveBatch(ctx context.Context, userID string, src []urls.UserBatch) ([]urls.UserBatchResult, error) {
 	var (
-		res     storage.UserBatchURLs
+		res     models.UserBatchURLs
 		err     error
 		resurls []urls.UserBatchResult
 	)
 	res.UserID = userID
 	for _, obj := range src {
-		var e storage.Element
+		var e models.Element
 		var fullShortURL string
 		e.CorrelationID = obj.CorrelationID
 		e.OriginalURL = obj.OriginalURL
@@ -97,7 +97,7 @@ func (s *UserService) SaveBatch(ctx context.Context, userID string, src []urls.U
 		resurls = append(resurls, urls.UserBatchResult{CorrelationID: obj.CorrelationID, ShortURL: fullShortURL})
 	}
 	err = s.dbRepository.SaveBatch(ctx, res)
-	if errors.Is(err, &storage.UniqueViolation) {
+	if errors.Is(err, &models.UniqueViolation) {
 		return nil, urls.ErrDuplicateKey
 	}
 	if err != nil {
@@ -111,7 +111,7 @@ func (s *UserService) GetURLByShort(ctx context.Context, userID string, shortURL
 		return "", errors.New("shortURL is empty")
 	}
 	originalURL, err := s.dbRepository.FindByShort(ctx, userID, shortURL)
-	if errors.Is(err, &storage.NoRowFound) {
+	if errors.Is(err, &models.NoRowFound) {
 		return "", urls.ErrNotFound
 	}
 	if err != nil {

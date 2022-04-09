@@ -63,8 +63,9 @@ func RunApp() {
 		fmt.Println("error in crypto-service", err)
 		return
 	}
+
 	userService := serv.NewUserService(postgresRepository, fileRepository, config.BaseURL)
-	deleteService := serv.NewDeleteService(deleteRepository)
+	deleteService := serv.NewDeleteService(deleteRepository, config.DeletePoolSize, config.DeleteTaskSize)
 	uh := handlers.NewUserHandler(userService, cryptoService, deleteService)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)

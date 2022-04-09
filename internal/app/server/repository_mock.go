@@ -2,7 +2,7 @@ package server
 
 import (
 	"context"
-	"github.com/da-semenov/go-short-url/internal/app/storage"
+	"github.com/da-semenov/go-short-url/internal/app/models"
 	"github.com/stretchr/testify/mock"
 )
 
@@ -19,7 +19,7 @@ func (r *FileRepositoryMock) Save(key string, value string) error {
 	return nil
 }
 
-func (r *FileRepositoryMock) FindByUser(key string) ([]storage.UserURLs, error) {
+func (r *FileRepositoryMock) FindByUser(key string) ([]models.UserURLs, error) {
 	return nil, nil
 }
 
@@ -31,10 +31,10 @@ type DBRepositoryMock struct {
 	mock.Mock
 }
 
-func (r *DBRepositoryMock) FindByUser(ctx context.Context, userID string) ([]storage.UserURLs, error) {
+func (r *DBRepositoryMock) FindByUser(ctx context.Context, userID string) ([]models.UserURLs, error) {
 	args := r.Called(userID)
-	res := storage.UserURLs{ID: 1, UserID: userID, OriginalURL: args.String(0), ShortURL: args.String(1)}
-	return []storage.UserURLs{res}, args.Error(2)
+	res := models.UserURLs{ID: 1, UserID: userID, OriginalURL: args.String(0), ShortURL: args.String(1)}
+	return []models.UserURLs{res}, args.Error(2)
 }
 
 func (r *DBRepositoryMock) FindByShort(ctx context.Context, userID string, shortURL string) (string, error) {
@@ -47,7 +47,7 @@ func (r *DBRepositoryMock) Save(ctx context.Context, userID string, originalURL 
 	return args.Error(0)
 }
 
-func (r *DBRepositoryMock) SaveBatch(ctx context.Context, data storage.UserBatchURLs) error {
+func (r *DBRepositoryMock) SaveBatch(ctx context.Context, data models.UserBatchURLs) error {
 	args := r.Called(data)
 	return args.Error(0)
 }

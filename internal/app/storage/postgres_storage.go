@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"github.com/da-semenov/go-short-url/internal/app/database"
+	"github.com/da-semenov/go-short-url/internal/app/models"
 	"github.com/da-semenov/go-short-url/internal/app/storage/basedbhandler"
 	"github.com/jackc/pgconn"
 	"github.com/jackc/pgerrcode"
@@ -32,14 +33,14 @@ func (r *PostgresRepository) Ping(ctx context.Context) (bool, error) {
 	return true, nil
 }
 
-func (r *PostgresRepository) FindByUser(ctx context.Context, userID string) ([]UserURLs, error) {
+func (r *PostgresRepository) FindByUser(ctx context.Context, userID string) ([]models.UserURLs, error) {
 	rows, err := r.handler.Query(ctx, database.GetURLsByUserID, userID)
 	if err != nil {
 		return nil, err
 	}
-	var resArr []UserURLs
+	var resArr []models.UserURLs
 	for rows.Next() {
-		var rec UserURLs
+		var rec models.UserURLs
 		err := rows.Scan(&rec.ID, &rec.UserID, &rec.OriginalURL, &rec.ShortURL)
 		resArr = append(resArr, rec)
 		if err != nil {
@@ -54,7 +55,7 @@ func (r *PostgresRepository) Save(ctx context.Context, userID string, originalUR
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		if pgErr.Code == pgerrcode.UniqueViolation {
-			return &UniqueViolation
+			return &models.UniqueViolation
 		}
 	}
 	if err != nil {
@@ -63,7 +64,7 @@ func (r *PostgresRepository) Save(ctx context.Context, userID string, originalUR
 	return nil
 }
 
-func (r *PostgresRepository) SaveBatch(ctx context.Context, src UserBatchURLs) error {
+func (r *PostgresRepository) SaveBatch(ctx context.Context, src models.UserBatchURLs) error {
 	var paramArr [][]interface{}
 	for _, obj := range src.List {
 		var paramLine []interface{}
@@ -77,7 +78,7 @@ func (r *PostgresRepository) SaveBatch(ctx context.Context, src UserBatchURLs) e
 	var pgErr *pgconn.PgError
 	if errors.As(err, &pgErr) {
 		if pgErr.Code == pgerrcode.UniqueViolation {
-			return &UniqueViolation
+			return &models.UniqueViolation
 		}
 	}
 	if err != nil {
@@ -101,7 +102,7 @@ func (r *PostgresRepository) FindByShort(ctx context.Context, userID string, sho
 
 	err = row.Scan(&res)
 	if err != nil && err.Error() == "no rows in result set" {
-		return "", &NoRowFound
+		return "", &models.NoRowFound
 	}
 	if err != nil {
 		return "", err

@@ -25,7 +25,5 @@ type UserBatchResult struct {
 	ShortURL      string `json:"short_url"`
 }
 
-type BatchDelete = string
-
 var ErrDuplicateKey = errors.New("duplicate key")
 var ErrNotFound = errors.New("no rows in result set")

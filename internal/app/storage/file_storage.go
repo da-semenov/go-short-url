@@ -3,6 +3,7 @@ package storage
 import (
 	"encoding/gob"
 	"errors"
+	"github.com/da-semenov/go-short-url/internal/app/models"
 	"io"
 	"os"
 	"path"
@@ -118,7 +119,7 @@ func (s *FileStorage) Find(key string) (string, error) {
 	}
 }
 
-func (s *FileStorage) FindByUser(key string) ([]UserURLs, error) {
+func (s *FileStorage) FindByUser(key string) ([]models.UserURLs, error) {
 	return nil, errors.New("unexpecting using of method")
 }
 
