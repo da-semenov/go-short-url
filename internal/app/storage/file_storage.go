@@ -114,9 +114,9 @@ func (s *FileStorage) copyStoreToTmp() (string, error) {
 func (s *FileStorage) Find(key string) (string, error) {
 	if val, ok := s.store[key]; ok {
 		return val, nil
-	} else {
-		return "", errors.New("value not found")
 	}
+
+	return "", errors.New("value not found")
 }
 
 func (s *FileStorage) FindByUser(key string) ([]models.UserURLs, error) {
