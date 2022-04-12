@@ -1,4 +1,4 @@
-package app
+package storage
 
 import (
 	"encoding/gob"
@@ -6,9 +6,11 @@ import (
 	"io"
 	"os"
 	"path"
+	"sync"
 )
 
-type Storage struct {
+type FileStorage struct {
+	sync.Mutex
 	store          map[string]string
 	cfgFileStorage string
 	f              *os.File
@@ -20,16 +22,8 @@ type StoreRecord struct {
 	Value string
 }
 
-type ShortenRequest struct {
-	URL string `json:"url"`
-}
-
-type ShortenResponse struct {
-	Result string `json:"result"`
-}
-
-func NewStorage(fileStorage string) (*Storage, error) {
-	var s Storage
+func NewFileStorage(fileStorage string) (*FileStorage, error) {
+	var s FileStorage
 	var tmpPath string
 	s.cfgFileStorage = fileStorage
 	s.store = make(map[string]string)
@@ -63,7 +57,7 @@ func NewStorage(fileStorage string) (*Storage, error) {
 	return &s, nil
 }
 
-func (s *Storage) init(filePath string) error {
+func (s *FileStorage) init(filePath string) error {
 	f, err := os.OpenFile(filePath, os.O_RDONLY|os.O_CREATE, 0755)
 	if err != nil {
 		return err
@@ -84,7 +78,7 @@ func (s *Storage) init(filePath string) error {
 	return nil
 }
 
-func (s *Storage) flush() error {
+func (s *FileStorage) flush() error {
 	for k, v := range s.store {
 		rec := StoreRecord{Key: k, Value: v}
 		err := s.encoder.Encode(&rec)
@@ -95,7 +89,7 @@ func (s *Storage) flush() error {
 	return nil
 }
 
-func (s *Storage) copyStoreToTmp() (string, error) {
+func (s *FileStorage) copyStoreToTmp() (string, error) {
 	in, err := os.Open(s.cfgFileStorage)
 	if err != nil {
 		return "", err
@@ -116,26 +110,33 @@ func (s *Storage) copyStoreToTmp() (string, error) {
 	return dstPath, out.Close()
 }
 
-func (s *Storage) Find(id string) (string, error) {
-	if val, ok := s.store[id]; ok {
+func (s *FileStorage) Find(key string) (string, error) {
+	if val, ok := s.store[key]; ok {
 		return val, nil
+	} else {
+		return "", errors.New("value not found")
 	}
-	return "", errors.New("id not found")
 }
 
-func (s *Storage) Save(id string, value string) error {
+func (s *FileStorage) FindByUser(key string) ([]UserURLs, error) {
+	return nil, errors.New("unexpecting using of method")
+}
+
+func (s *FileStorage) Save(key string, value string) error {
 	var err error
-	if val, ok := s.store[id]; ok {
+	s.Lock()
+	defer s.Unlock()
+	if val, ok := s.store[key]; ok {
 		if val != value {
-			s.store[id] = value
-			rec := StoreRecord{Key: id, Value: value}
+			s.store[key] = value
+			rec := StoreRecord{Key: key, Value: value}
 			err = s.encoder.Encode(&rec)
 		} else {
-			s.store[id] = value
+			s.store[key] = value
 		}
 	} else {
-		s.store[id] = value
-		rec := StoreRecord{Key: id, Value: value}
+		s.store[key] = value
+		rec := StoreRecord{Key: key, Value: value}
 		err = s.encoder.Encode(&rec)
 	}
 	return err
