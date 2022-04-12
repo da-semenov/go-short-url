@@ -61,3 +61,12 @@ func (s *CryptoServiceMock) GetNewUserToken() (string, string, error) {
 	args := s.Called()
 	return args.String(0), args.String(1), args.Error(2)
 }
+
+type DeleteServiceMock struct {
+	mock.Mock
+}
+
+func (s *DeleteServiceMock) DeleteBatch(ctx context.Context, userID string, URLList []string) error {
+	args := s.Called(userID, URLList)
+	return args.Error(0)
+}

@@ -10,6 +10,7 @@ import (
 var userService *UserServiceMock
 var cryptoService *CryptoServiceMock
 var userHandler *UserHandler
+var deleteService *DeleteServiceMock
 
 func TestMain(m *testing.M) {
 	userService = new(UserServiceMock)
@@ -36,6 +37,8 @@ func TestMain(m *testing.M) {
 
 	cryptoService.On("GetNewUserToken").Return("user_id", "valid_user_Token", nil)
 
-	userHandler = NewUserHandler(userService, cryptoService)
+	deleteService = new(DeleteServiceMock)
+
+	userHandler = NewUserHandler(userService, cryptoService, deleteService)
 	os.Exit(m.Run())
 }

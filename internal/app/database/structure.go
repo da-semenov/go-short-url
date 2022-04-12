@@ -5,10 +5,9 @@ const urls = "create table if not exists  urls (id numeric primary key, correlat
 	"create index if not exists urls_short_url_idx on urls (short_url);\n" +
 	"create unique index if not exists urls_udx on urls (original_url);\n"
 
-const userURLs = "create table if not exists  user_urls (user_id varchar, url_id numeric);\n" +
+const userURLs = "create table if not exists  user_urls (user_id varchar, url_id numeric, is_deleted numeric default 0);\n" +
 	"create unique index if not exists user_url_idx1 on user_urls (user_id, url_id);\n"
 
 const CreateDatabaseStructure = urls + userURLs
 
-const ClearDatabaseStructure = "drop table if exists user_urls cascade;\n" +
-	"drop table if exists urls cascade;\n"
+const ClearDatabaseStructure = "drop table if exists user_urls cascade; drop table if exists urls cascade;"

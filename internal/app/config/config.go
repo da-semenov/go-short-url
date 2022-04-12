@@ -8,11 +8,13 @@ import (
 )
 
 type AppConfig struct {
-	ServerAddress string `env:"SERVER_ADDRESS" envDefault:":8080"`
-	BaseURL       string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
-	FileStorage   string `env:"FILE_STORAGE_PATH" envDefault:"./data/storage.csv"`
-	DatabaseDSN   string `env:"DATABASE_DSN" envDefault:"postgresql://practicum:practicum@127.0.0.1:5432/mdb"`
-	ReInit        bool   `env:"REINIT" envDefault:"true"`
+	ServerAddress  string `env:"SERVER_ADDRESS" envDefault:":8080"`
+	BaseURL        string `env:"BASE_URL" envDefault:"http://localhost:8080/"`
+	FileStorage    string `env:"FILE_STORAGE_PATH" envDefault:"./data/storage.csv"`
+	DatabaseDSN    string `env:"DATABASE_DSN" envDefault:"postgresql://practicum:practicum@127.0.0.1:5432/mdb"`
+	ReInit         bool   `env:"REINIT" envDefault:"true"`
+	DeleteTaskSize int
+	DeletePoolSize int
 }
 
 func (config *AppConfig) Init() error {
@@ -32,6 +34,8 @@ func (config *AppConfig) Init() error {
 	if config.BaseURL[len(config.BaseURL)-1:] != "/" {
 		config.BaseURL += "/"
 	}
+	config.DeletePoolSize = 5
+	config.DeleteTaskSize = 500
 	return nil
 }
 

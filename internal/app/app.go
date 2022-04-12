@@ -52,13 +52,21 @@ func RunApp() {
 		return
 	}
 
-	cs, err := serv.NewCryptoService()
+	deleteRepository, err := storage.NewDeleteRepository(postgresHandler)
+	if err != nil {
+		fmt.Println("can't init delete repository", err)
+		return
+	}
+
+	cryptoService, err := serv.NewCryptoService()
 	if err != nil {
 		fmt.Println("error in crypto-service", err)
 		return
 	}
+
 	userService := serv.NewUserService(postgresRepository, fileRepository, config.BaseURL)
-	uh := handlers.NewUserHandler(userService, cs)
+	deleteService := serv.NewDeleteService(deleteRepository, config.DeletePoolSize, config.DeleteTaskSize)
+	uh := handlers.NewUserHandler(userService, cryptoService, deleteService)
 	router := chi.NewRouter()
 	router.Use(middleware.CleanPath)
 	router.Use(middleware.Logger)
@@ -70,6 +78,7 @@ func RunApp() {
 		r.Get("/ping", uh.PingHandler)
 		r.Post("/api/shorten", uh.PostShortenHandler)
 		r.Post("/api/shorten/batch", uh.PostShortenBatchHandler)
+		r.Delete("/api/user/urls", uh.AsyncDeleteHandler)
 		r.Post("/", uh.PostMethodHandler)
 		r.Put("/", uh.DefaultHandler)
 		r.Patch("/", uh.DefaultHandler)

@@ -1,4 +1,4 @@
-package storage
+package models
 
 import (
 	"context"
@@ -44,6 +44,10 @@ type UserBatchURLs struct {
 type DatabaseError struct {
 	Err  error
 	Code string
+}
+
+type DeleteRepository interface {
+	BatchDelete(ctx context.Context, userID string, URLList []string) error
 }
 
 func (t *DatabaseError) Error() string {
