@@ -1,6 +1,8 @@
 package app
 
 import (
+	"bytes"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/stretchr/testify/assert"
@@ -27,15 +29,25 @@ func (s *ServiceMock) GetURL(id string) (string, error) {
 	return args.String(0), args.Error(1)
 }
 
+func (s *ServiceMock) GetShorten(url string) (*ShortenResponse, error) {
+	args := s.Called(url)
+	return &ShortenResponse{Result: args.String(0)}, args.Error(1)
+}
+
 var service *ServiceMock
 var handler *URLHandler
 
 func TestMain(m *testing.M) {
 	service = new(ServiceMock)
+
 	service.On("GetID", "URL").Return("encode_URL", nil)
 	service.On("GetID", "").Return("", errors.New("URL is empty"))
+
 	service.On("GetURL", "encode_URL").Return("URL", nil)
 	service.On("GetURL", "xxx").Return("", errors.New("id not found"))
+
+	service.On("GetShorten", "URL").Return("encode_URL", nil)
+	service.On("GetShorten", "").Return("encode_URL", errors.New("URL is empty"))
 
 	handler = EncodeURLHandler(service)
 	os.Exit(m.Run())
@@ -173,6 +185,67 @@ func TestURLHandler_defaultHandler(t *testing.T) {
 				t.Errorf("Can't read response body, %e", err)
 			}
 			assert.Equal(t, "Unsupported request type\n", string(responseBody), "Expected body is %s, got %s", tt.wants.resultResponse, string(responseBody))
+		})
+	}
+}
+
+func TestURLHandler_postMethodShortenHandler(t *testing.T) {
+	type args struct {
+		request *ShortenRequest
+	}
+	type wants struct {
+		responseCode int
+		response     string
+	}
+	tests := []struct {
+		name  string
+		args  args
+		wants wants
+	}{
+		{name: "test 1.Positive.",
+			args: args{request: &ShortenRequest{"URL"}},
+			wants: wants{responseCode: http.StatusCreated,
+				response: "encode_URL"},
+		},
+		{name: "test 2.Empty body.",
+			args: args{request: nil},
+			wants: wants{responseCode: http.StatusBadRequest,
+				response: ""},
+		},
+		{name: "test 3.Empty URL.",
+			args: args{request: &ShortenRequest{""}},
+			wants: wants{responseCode: http.StatusBadRequest,
+				response: ""},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			var requestBody []byte
+			if tt.args.request != nil {
+				requestBody, _ = json.Marshal(tt.args.request)
+			}
+			request := httptest.NewRequest("POST", "/api/shorten", bytes.NewReader(requestBody))
+			w := httptest.NewRecorder()
+			h := http.HandlerFunc(handler.PostShortenHandler)
+			h.ServeHTTP(w, request)
+			res := w.Result()
+			fmt.Println(res)
+
+			assert.Equal(t, tt.wants.responseCode, res.StatusCode, "Expected status %d, got %d", tt.wants.responseCode, res.StatusCode)
+
+			if res.StatusCode == http.StatusCreated {
+				responseBody, err := io.ReadAll(res.Body)
+
+				defer res.Body.Close()
+				if err != nil {
+					t.Errorf("Can't read response body, %e", err)
+				}
+				var result ShortenResponse
+				if err := json.Unmarshal(responseBody, &result); err != nil {
+					t.Error("Can't unmarshal", err)
+				}
+				assert.Equal(t, tt.wants.response, result.Result, "Expected body is %s, got %s", tt.wants.response, result.Result)
+			}
 		})
 	}
 }
