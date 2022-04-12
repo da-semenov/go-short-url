@@ -49,8 +49,7 @@ func (s *UserService) GetURLsByUser(ctx context.Context, userID string) ([]urls.
 		return nil, err
 	}
 
-	var resList []urls.UserURLs
-	resList = make([]urls.UserURLs, 0)
+	resList := make([]urls.UserURLs, 0)
 	for _, rec := range resArr {
 		u, err := s.mapUserURLs(&rec)
 		if err != nil {

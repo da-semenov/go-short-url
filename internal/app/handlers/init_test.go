@@ -8,7 +8,6 @@ import (
 )
 
 var userService *UserServiceMock
-var cryptoService *CryptoServiceMock
 var userHandler *UserHandler
 var deleteService *DeleteServiceMock
 

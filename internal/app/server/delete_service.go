@@ -22,13 +22,13 @@ func newPool(maxSize int) *pool {
 func (p *pool) Inc() {
 	p.Lock()
 	defer p.Unlock()
-	p.currentSize += 1
+	p.currentSize++
 }
 
 func (p *pool) Dec() {
 	p.Lock()
 	defer p.Unlock()
-	p.currentSize -= 1
+	p.currentSize--
 }
 
 func (p *pool) LessMax() bool {
